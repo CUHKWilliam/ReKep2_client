@@ -1,0 +1,35 @@
+def stage_2_path_constraint1():
+    """constraints: <"path constraints", "the heading direction of the gripper of the robot", "the plane of the surface of the red button of the button", "the heading direction of the gripper of the robot is perpendicular to the plane of the surface of the red button of the button">"""
+    mask1 = segment("the heading direction of the gripper of the robot", -1)
+    mask2 = segment("the plane of the surface of the red button of the button", -1)
+    
+    # Convert masks to point clouds
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Calculate the heading direction of the gripper (pc1)
+    covariance_matrix_gripper = np.cov(pc1.T)
+    eigenvalues_gripper, eigenvectors_gripper = np.linalg.eig(covariance_matrix_gripper)
+    gripper_heading = eigenvectors_gripper[:, np.argmax(eigenvalues_gripper)]
+
+    # Calculate the normal vector of the button surface (pc2)
+    covariance_matrix_button = np.cov(pc2.T)
+    eigenvalues_button, eigenvectors_button = np.linalg.eig(covariance_matrix_button)
+    button_surface_normal = eigenvectors_button[:, np.argmin(eigenvalues_button)]
+
+    # Normalize both vectors
+    gripper_heading = gripper_heading / np.linalg.norm(gripper_heading)
+    button_surface_normal = button_surface_normal / np.linalg.norm(button_surface_normal)
+    
+    # Compute the dot product between the gripper heading and button surface normal
+    dot_product = np.dot(gripper_heading, button_surface_normal)
+    
+    # The cost is based on how close the dot product is to 1 (perpendicular)
+    cost = abs(dot_product) * 5.
+    
+    return cost
+

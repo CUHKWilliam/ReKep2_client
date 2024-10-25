@@ -1,0 +1,16 @@
+Example 1:
+            <IMAGE>mask_0.png</IMAGE>
+            <IMAGE>mask_1.png</IMAGE>
+            <IMAGE>mask_2.png</IMAGE>
+            There are totally 3 pair of images. 
+            For each pair, the left image is the image of the pencil. The right image is the segmentation mask highlighted in white to represent different parts of the pencil. These images are named as image i, ... (i=0, 1, 2, ...)
+            Please select one of the image and use it to get the tip of the pencil.
+            - Output: image i, `part` (i=0,1,2... is the index number).
+            - Where `part` is geometry, like the edge, the center, left point, right, point, etc..
+            - You can analysis the problem if needed, but please output the final result in a seperate line in the format image i, `part`.
+            - At the end, output "<splitter>"
+            - Left part of the image 0 highlights the background. left part of image 1 highlights the main body of the pencil. Left part of the image 2 highlights the main body and one tip of the pencil. To get the tip of the pencil, we should get the right part of segmentation image of image 1, or the left part of segmentation image of image 2.
+            # You can add more explainations here
+            image 1, right part
+
+            

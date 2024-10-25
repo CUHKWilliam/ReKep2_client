@@ -1,0 +1,13 @@
+## mask_indice: 0
+def segment_object(mask):
+    ## find out right edge of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    mask_output = np.zeros_like(mask)
+    
+    # Locate the rightmost edge where the object is white (True)
+    for i in range(H):
+        rightmost_idx = np.where(mask[i, :])[0]
+        if len(rightmost_idx) > 0:
+            mask_output[i, rightmost_idx[-1]] = True
+
+    return mask_output

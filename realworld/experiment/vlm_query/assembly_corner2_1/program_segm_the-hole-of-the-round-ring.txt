@@ -1,0 +1,19 @@
+## mask_indice: 11
+def segment_object(mask):
+    ## find out center of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # Initialize mask_output with False values
+    mask_output = np.zeros((H, W), dtype=bool)
+    
+    # Find the center of the mask
+    center_x, center_y = W // 2, H // 2
+    
+    # Iterate through the mask and find the hole (center part)
+    for i in range(H):
+        for j in range(W):
+            # If the pixel is part of the mask and is near the center, mark it as True
+            if mask[i, j] and (abs(i - center_y) < H // 4) and (abs(j - center_x) < W // 4):
+                mask_output[i, j] = True
+    
+    return mask_output

@@ -1,0 +1,37 @@
+def stage_2_path_constraint1():
+    """constraints: <"path constraints", "the center of the gripper of the robot at initial frame", "the center of the gripper of the robot", "the axis of the hinge of the fridge", "the distance between the center of the gripper of the robot at initial frame and the axis of the hinge of the fridge equals the distance between the center of the gripper of the robot and the axis of the hinge of the fridge">"""
+    mask1 = segment("the center of the gripper of the robot", 0)
+    mask2 = segment("the center of the gripper of the robot", -1)
+    mask3 = segment("the axis of the hinge of the fridge", 0)
+    # Ensure point clouds are in the correct shape
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+        pc3 = mask3
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+        pc3 = mask_to_pc(mask3)
+
+    # Compute the mean positions of the gripper and hinge axis
+    gripper_initial = np.mean(pc1, axis=0)
+    gripper_current = np.mean(pc2, axis=0)
+    hinge = np.mean(pc3, axis=0)
+    
+    # Calculate the distance between the gripper and the hinge at both timestamps
+    distance_initial = np.linalg.norm(gripper_initial - hinge)
+    distance_current = np.linalg.norm(gripper_current - hinge)
+    
+    # Calculate the cost based on the difference in distances
+    cost = abs(distance_initial - distance_current)
+    print("cost:", cost)
+    # import open3d as o3d
+    # pcd = o3d.geometry.PointCloud()
+    # pcd.points = o3d.utility.Vector3dVector(mask1)
+    # o3d.io.write_point_cloud('debug1.ply', pcd)
+    # pcd.points = o3d.utility.Vector3dVector(mask2)
+    # o3d.io.write_point_cloud('debug2.ply', pcd)
+    # pcd.points = o3d.utility.Vector3dVector(hinge[None, :])
+    # o3d.io.write_point_cloud('debug3.ply', pcd)
+    return cost
+

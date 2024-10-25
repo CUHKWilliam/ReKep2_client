@@ -1,0 +1,18 @@
+## mask_indice: 1
+def segment_object(mask):
+    ## find out center of segmentation image as mask_output, mask_output is in shape(H, W)
+    H, W = mask.shape
+    center_mask = np.zeros_like(mask)
+    
+    # Calculate the center region
+    center_region_height = H // 4
+    center_region_width = W // 4
+    
+    start_i = H // 2 - center_region_height // 2
+    end_i = start_i + center_region_height
+    start_j = W // 2 - center_region_width // 2
+    end_j = start_j + center_region_width
+    
+    center_mask[start_i:end_i, start_j:end_j] = mask[start_i:end_i, start_j:end_j]
+    
+    return center_mask

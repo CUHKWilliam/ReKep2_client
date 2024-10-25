@@ -1,0 +1,147 @@
+```python
+import numpy as np
+
+### <stage constraints splitter> ###
+### stage 1 sub-goal constraints (grasping)
+def stage_1_subgoal_constraint1():
+    """constraints: <"grasp", "the area of the green handle of the round ring"> """
+    return grasp("the area of the green handle of the round ring")
+
+
+### <stage constraints splitter> ###
+### stage 2 sub-goal constraints
+def stage_2_subgoal_constraint1():
+    """constraints: <"sub-goal constraints", "the center of the hole of the round ring", "the center of the top of the red stick", "the center of the hole of the round ring is directly above the center of the top of the red stick by around 5 centimeters">"""
+    mask1 = segment("the center of the hole of the round ring", -1)
+    mask2 = segment("the center of the top of the red stick", -1)
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Compute the mean position of the hole of the round ring and the top of the red stick
+    hole_center = np.mean(pc1, axis=0)
+    stick_top_center = np.mean(pc2, axis=0)
+    
+    # Calculate the horizontal distance (x, y coordinates) between the centers
+    horizontal_distance = np.linalg.norm(hole_center[:2] - stick_top_center[:2])
+    
+    # Calculate the vertical distance (z coordinate) between the centers
+    vertical_distance = hole_center[2] - stick_top_center[2] - 0.05  # 5 cm above
+    
+    cost = abs(vertical_distance) + horizontal_distance
+    return cost
+
+
+def stage_2_subgoal_constraint2():
+    """constraints: <"path constraints", "the axis of the hole of the round ring", "the axis of the red stick", "the axis of the hole of the round ring is parallel to the axis of the red stick">"""
+    mask1 = segment("the axis of the hole of the round ring", -1)
+    mask2 = segment("the axis of the red stick", -1)
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Calculate the axis of the hole of the round ring (pc1)
+    covariance_matrix_ring = np.cov(pc1.T)
+    eigenvalues_ring, eigenvectors_ring = np.linalg.eig(covariance_matrix_ring)
+    ring_axis = eigenvectors_ring[:, np.argmax(eigenvalues_ring)]
+
+    # Calculate the axis of the red stick (pc2)
+    covariance_matrix_stick = np.cov(pc2.T)
+    eigenvalues_stick, eigenvectors_stick = np.linalg.eig(covariance_matrix_stick)
+    stick_axis = eigenvectors_stick[:, np.argmax(eigenvalues_stick)]
+
+    # Normalize both vectors
+    ring_axis = ring_axis / np.linalg.norm(ring_axis)
+    stick_axis = stick_axis / np.linalg.norm(stick_axis)
+    
+    # Compute the dot product between the axes
+    dot_product = np.dot(ring_axis, stick_axis)
+    
+    # The cost is based on how close the dot product is to 1 (parallel)
+    cost = abs(1 - dot_product) * 5.
+    return cost
+
+
+### <stage constraints splitter> ###
+### stage 3 target constraints
+def stage_3_target_constraint1():
+    """constraints: <"target constraints", "the center of the hole of the round ring", "the center of the top of the red stick", "the center of the hole of the round ring reaches the center of the top of the red stick">"""
+    mask1 = segment("the center of the hole of the round ring", -1)
+    mask2 = segment("the center of the top of the red stick", -1)
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Compute the mean position of the hole of the round ring and the top of the red stick
+    hole_center = np.mean(pc1, axis=0)
+    stick_top_center = np.mean(pc2, axis=0)
+    
+    # Calculate the distance between the centers
+    distance = np.linalg.norm(hole_center - stick_top_center)
+    
+    cost = distance
+    return cost
+
+
+def stage_3_target_constraint2():
+    """constraints: <"path constraints", "the axis of the hole of the round ring", "the axis of the red stick", "the axis of the hole of the round ring remains parallel to the axis of the red stick">"""
+    mask1 = segment("the axis of the hole of the round ring", -1)
+    mask2 = segment("the axis of the red stick", -1)
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Calculate the axis of the hole of the round ring (pc1)
+    covariance_matrix_ring = np.cov(pc1.T)
+    eigenvalues_ring, eigenvectors_ring = np.linalg.eig(covariance_matrix_ring)
+    ring_axis = eigenvectors_ring[:, np.argmax(eigenvalues_ring)]
+
+    # Calculate the axis of the red stick (pc2)
+    covariance_matrix_stick = np.cov(pc2.T)
+    eigenvalues_stick, eigenvectors_stick = np.linalg.eig(covariance_matrix_stick)
+    stick_axis = eigenvectors_stick[:, np.argmax(eigenvalues_stick)]
+
+    # Normalize both vectors
+    ring_axis = ring_axis / np.linalg.norm(ring_axis)
+    stick_axis = stick_axis / np.linalg.norm(stick_axis)
+    
+    # Compute the dot product between the axes
+    dot_product = np.dot(ring_axis, stick_axis)
+    
+    # The cost is based on how close the dot product is to 1 (parallel)
+    cost = abs(1 - dot_product) * 5.
+    return cost
+
+
+### <stage constraints splitter> ###
+### stage 4 sub-goal constraints (releasing)
+def stage_4_subgoal_constraint1():
+    """constraints: <"release"> """
+    release()
+    return
+
+
+### List of geometries to segment ###
+object_to_segment = [
+    "the center of the hole of the round ring",
+    "the axis of the hole of the round ring",
+    "the center of the top of the red stick",
+    "the axis of the red stick"
+]
+```

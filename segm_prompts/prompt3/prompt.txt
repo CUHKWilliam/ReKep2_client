@@ -1,0 +1,14 @@
+
+Here are some knowledge about finding the parts given segmentation masks: 
+knowledge end.
+There are totally 1 pair of images. 
+For each pair, the left image is the image of the door with different part highlighted in white. The right image is the segmentation mask highlighted in white to represent different parts of the door. These images are named as image i, ... (i=0, 1, 2, ...)
+    Please infer what is highlighted in white for the left image one by one, and then select one of the image of the hinge of the door.
+    - Output: image i, `geometry` (i=0,1,2... is the index number).
+    - Where `geometry` is the geometry of object, like the edge, the center, the area, left point, right, point, etc..
+    - If the segmentation image does not contain the object part, think about whether we can derive the object part from this image, and select this image. For example, if the image does not correspond to "the tip of the pen", output the mask containing the pen and we can derive the tip later.
+    - You can analysis the problem if needed, but please output the final result in a seperate line in the format image i, `part`.
+    - For the right image, check if the corresponding object part is in black. If so, it is a background and don't use it !!!!!!!!!
+    - Remember that the image index i starts from 0.
+    - At the end, output "<splitter>"
+    image 1, right edge

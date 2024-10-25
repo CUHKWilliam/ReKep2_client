@@ -1,0 +1,17 @@
+## mask_indice: 3
+def segment_object(mask):
+    ## find out handle of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # Initialize an empty mask for the output
+    mask_output = np.zeros_like(mask, dtype=bool)
+    
+    # Iterate through each row and column to find the handle (leftmost part of the mask)
+    for i in range(H):
+        for j in range(W):
+            if mask[i, j]:
+                # Assuming the handle is on the left side, we can segment the leftmost part
+                if j < W // 2:  # Left half of the image
+                    mask_output[i, j] = True
+    
+    return mask_output

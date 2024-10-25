@@ -1,0 +1,21 @@
+def stage_2_subgoal_constraint1():
+    mask1 = segment("the point of the pen tip of the pen")
+    mask2 = segment("the plane of cup opening of the black cup")
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Calculate the average position of the point cloud points
+    pen_tip_position = np.mean(pc1, axis=0)
+    cup_opening_plane_position = np.mean(pc2, axis=0)
+
+    # Calculate distance in z-axis (assuming vertical axis)
+    distance = np.abs(pen_tip_position[2] - cup_opening_plane_position[2])
+    
+    cost = np.abs(distance - 10.0) # Ideal distance is 10 centimeters
+    print("stage 2 subgoal constraint:", cost)
+    return cost
+

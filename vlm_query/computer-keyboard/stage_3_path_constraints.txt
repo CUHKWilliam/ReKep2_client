@@ -1,0 +1,33 @@
+def stage_3_path_constraint1():
+    """constraints: <"path constraints", "the heading direction of the gripper of the robot", "the plane of the surface of the H key of the keyboard", "the heading direction of the gripper of the robot is perpendicular to the plane of the surface of the H key of the keyboard">"""
+    mask1 = segment("the heading direction of the gripper of the robot", -1)
+    mask2 = segment("the plane of the surface of the H key of the keyboard", -1)
+    # Convert masks to point clouds
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Calculate the normal vector of the plane of the H key (pc2)
+    covariance_matrix_h_key = np.cov(pc2.T)
+    eigenvalues_h_key, eigenvectors_h_key = np.linalg.eig(covariance_matrix_h_key)
+    h_key_surface_normal = eigenvectors_h_key[:, np.argmin(eigenvalues_h_key)]
+
+    # Calculate the heading direction of the gripper (pc1)
+    covariance_matrix_gripper = np.cov(pc1.T)
+    eigenvalues_gripper, eigenvectors_gripper = np.linalg.eig(covariance_matrix_gripper)
+    gripper_heading_direction = eigenvectors_gripper[:, np.argmax(eigenvalues_gripper)]
+
+    # Normalize both vectors
+    h_key_surface_normal = h_key_surface_normal / np.linalg.norm(h_key_surface_normal)
+    gripper_heading_direction = gripper_heading_direction / np.linalg.norm(gripper_heading_direction)
+    
+    # Compute the dot product between the gripper heading and the H key surface normal
+    dot_product = np.dot(gripper_heading_direction, h_key_surface_normal)
+    
+    # The cost is based on how close the dot product is to 0 (parallel)
+    cost = (1 - abs(dot_product)) * 5.
+    
+    return cost

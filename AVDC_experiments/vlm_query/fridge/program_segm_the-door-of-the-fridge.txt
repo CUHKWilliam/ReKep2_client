@@ -1,0 +1,10 @@
+## mask_indice: 2
+def segment_object(mask):
+    ## find out area of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape
+    mask_output = np.zeros((H, W), dtype=bool)
+
+    # Copy the area where mask is True
+    mask_output[mask] = True
+    
+    return mask_output

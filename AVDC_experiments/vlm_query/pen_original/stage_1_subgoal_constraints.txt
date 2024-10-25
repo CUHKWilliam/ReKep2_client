@@ -1,0 +1,3 @@
+def stage_1_subgoal_constraint1():
+    return grasp("the body of the pen")
+

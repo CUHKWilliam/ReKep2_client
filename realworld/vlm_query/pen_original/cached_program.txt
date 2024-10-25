@@ -1,0 +1,72 @@
+import numpy as np
+
+### <stage constraints splitter> ###
+
+### stage 1 sub-goal constraints (if any)
+## Grasping constraint
+"""constraints: <"grasp", "pen"> """
+def stage_1_subgoal_constraint1():
+    mask = segment("pen")
+    return grasp(mask)
+
+### <stage constraints splitter> ###
+
+### stage 2 sub-goal constraints
+"""constraints: <"sub-goal constraints", "the pen tip of the pen", "the plane of the cup opening of the cup", "above around 5 centimeters">"""
+def stage_2_subgoal_constraint1():
+    mask1 = segment("pen tip of the pen")
+    mask2 = segment("plane of the cup opening of the cup")
+    pc1, pc2 = mask_to_pc(image, mask1), mask_to_pc(image, mask2)
+    # Calculate the minimum vertical distance between pen tip and cup opening
+    distance = np.min(pc1[:, 2]) - np.max(pc2[:, 2])  # Z-axis represents height
+    # Penalize if not within 5 centimeters
+    cost = np.abs(distance - 5)
+    return cost
+
+### <stage constraints splitter> ###
+
+### stage 2 path constraints
+"""constraints: <"path constraints", "the axis of the pen body of the pen", "the plane of the ground", "parallel">"""
+def stage_2_path_constraint1():
+    mask1 = segment("axis of the pen body of the pen")
+    mask2 = segment("plane of the ground")
+    pc1, pc2 = mask_to_pc(image, mask1), mask_to_pc(image, mask2)
+    # Calculate the angle between the axis of the pen and the ground plane normal
+    pen_axis = np.mean(pc1[:, :2], axis=0)  # Use the XY coordinates for axis
+    ground_normal = np.array([0, 0, 1])  # Z-axis normal for ground plane
+    angle = np.arccos(np.dot(pen_axis, ground_normal) / (np.linalg.norm(pen_axis) * np.linalg.norm(ground_normal)))
+    # Penalize non-parallel alignment
+    cost = np.abs(angle)
+    return cost
+
+### <stage constraints splitter> ###
+
+### stage 3 sub-goal constraints
+"""constraints: <"sub-goal constraints", "the pen tip of the pen", "the bottom plane of the cup", "inside and touching the bottom">"""
+def stage_3_subgoal_constraint1():
+    mask1 = segment("pen tip of the pen")
+    mask2 = segment("bottom plane of the cup")
+    pc1, pc2 = mask_to_pc(image, mask1), mask_to_pc(image, mask2)
+    # Calculate the vertical distance between pen tip and cup bottom
+    distance = np.min(pc1[:, 2]) - np.min(pc2[:, 2])  # Z-axis represents height
+    # Penalize if pen is not touching the bottom
+    cost = np.abs(distance)
+    return cost
+
+### <stage constraints splitter> ###
+
+### stage 3 path constraints
+"""constraints: <"path constraints", "the axis of the pen body of the pen", "the axis of the cup", "vertical">"""
+def stage_3_path_constraint1():
+    mask1 = segment("axis of the pen body of the pen")
+    mask2 = segment("axis of the cup")
+    pc1, pc2 = mask_to_pc(image, mask1), mask_to_pc(image, mask2)
+    # Calculate the angle between the pen axis and the cup axis
+    pen_axis = np.mean(pc1[:, :2], axis=0)  # Use the XY coordinates for axis
+    cup_axis = np.mean(pc2[:, :2], axis=0)  # Use the XY coordinates for cup axis
+    angle = np.arccos(np.dot(pen_axis, cup_axis) / (np.linalg.norm(pen_axis) * np.linalg.norm(cup_axis)))
+    # Penalize if pen and cup axis are not aligned vertically
+    cost = np.abs(angle)
+    return cost
+
+### <stage constraints splitter> ###

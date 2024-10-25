@@ -1,0 +1,7 @@
+## mask_indice: 2
+def segment_object(mask):
+    ## find out right part of segmentation image as mask_output, mask_output is in shape(H, W)
+    H, W = mask.shape
+    mask_output = np.zeros((H, W), dtype=bool)
+    mask_output[:, W//2:] = mask[:, W//2:]
+    return mask_output

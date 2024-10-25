@@ -1,0 +1,200 @@
+## Query
+Query Task: "put the pen into the black cup"
+
+## Instructions
+Suppose you are controlling a robot to perform manipulation tasks by writing constraint functions in Python. The manipulation task is given as an image of the environment. For each given task, please perform the following steps:
+- Determine how many stages are involved in the task. Grasping or releasing must be an independent stage. Some examples:
+  - "pouring tea from teapot":
+    - 3 stages: "grasp teapot", "align teapot with cup opening", and "pour liquid"
+  - "put red block on top of blue block":
+    - 3 stages: "grasp red block", "drop the red block on top of blue block"
+  - "reorient bouquet and drop it upright into vase":
+    - 3 stages: "grasp bouquet", "reorient bouquet", and "keep upright and drop into vase"
+- For each stage except for the grasping and release stage, please write geometric constraints in lines. Each line represent a constraint should be satisfied. Each line is a tuple of 4 element: ("constraints type", "`geometry` of `the object part` of `the object`, "`geometry` of `the object part` of `the object`, "constraints"), each element is explained in the follows:
+  - "geometry":  1. joints including axis, slider, hinge, and etc.. 2. basic geometric primitive including planes, edges, area, point, and etc..
+  - "the object part": the key object part on an object, like the tip, the opening, the handle, etc.
+  - "the object": the complete object, like the black cup, the second door, the teapot, etc.
+  - "constraint": 1. basic geometric relationship including parallel, perpendicular, vertical, intersect, and etc.. 2. positional constraint like above, below, to the left / right, and etc.. 3. Distance range like "by 10 centimeters", "around 10 centimeters", "more than 10 centimeters", "10 centimeters to 20 centimeters", etc..
+  - "constraints type": either "sub-goal constraints" or "path constraints". The "sub-goal constraints" are constraints that must be satisfied **at the end of the stage**, while the "path constraints" are constraints that must be satisfied **within the stage**. 
+  - Strictly follow the format. Do not ignore "of"
+- For the grasping stage, output <"grasp", "the area of `the object part` of  `the object`">
+- For the releasing stage, output <"release">
+- Avoid using the part that is invisible in the image like "bottom", "back part" and etc.
+- Please give as detailed constraint as possible.
+- To move something, you must grasp it first.
+
+
+Here are some examples:
+  - "pouring liquid from teapot":
+    - "grasp teapot" stage:
+      - <"grasp", "the area of the handle of the teapot">
+    - "align teapot with cup opening" stage:
+      - <"sub-goal constraints", "the center of the teapot spout of the teapot", "the center of the cup opening of the cup", "directly above around 10 centimeters">
+      - <"path constaints", "the axis of the body of the teapot", "the plane of the surface of the table", "perpendicular">
+    - "pour liquid" stage:
+      - <"path constaints", "the center of the teapot spout of the teapot", "the center of cup opening of the cup", "directly above around 5 centimeters">
+      - <"sub-goal constraints", "the center of the teapot spout of the teapot", "the center of the teapot handle of the teapot", "below around 5 centimeters">
+  - "put red block on top of the blue block":
+    - "grasp red block" stage:
+      - <"grasp", "the area of the body of the red block">
+    - "drop the red block on top of blue block" stage:
+      - <"sub-goal constraints", "the center of the red block", "the center of the blue block", "directly above around 10 centimeters">
+    - "release the red block" stage:
+      - <"release">
+  - "drop the bouquet to the vase":
+    - "grasp bouquet" stage:
+      - <"grasp", "the area of the body of the bouquet">
+    - "reorient bouquet" stage:
+      - <"sub-goal constraints", "the center of the flowers of the bouquet", "the center of the stem of the bouquet", "above">
+    - "keep upright and drop into vase" stage:
+      - <"sub-goal constaints", "the center of the bouquet", "the plane of the vase opening of the vase", "above around 20 centimeters">
+      - <"sub-goal constraints", "the center of the flowers of the bouquet", "the center of the stem of the bouquet", "above">
+    - "release the bouquet stage":
+      - <"release">
+Summarize a list of "`geometry` of `the object part` of `the object`" that we need to track. For example:
+  - "pouring liquid from teapot":
+  part_lists = ["the center of handle of the teapot", "the center of spout of the teapot", "the plane of the cup opening of the cup", "the center of the cup opening of the cup", "the plane of the surface of the table"]
+num_stages = ?
+<STEP SPLITTER>
+
+
+
+We now have a text-guided object part and joint segmentor. 
+- We can obtain the segmentation mask by calling Python function "segment". For example, if I want to segment the axis of the windmill, I can obtain the mask by  "mask = segment(axis of the windmill)". 
+- We have another function called "mask_to_pc" which can retrieve the point cloud in the shape N by 3 of the segment part. 
+- Please implement a Python function "stage_i_subgoal_constraints()" or "stage_i_path_constraints()" for all the constraints tuples in the <> brackets one by one, except for the grasping and repleasing constraints. It returns the cost measuring to what extent the constraint is satisfied. The constraint is satisfied when the cost goes down to 0. 
+- Grasping and releasing should be a seperate stage. For grasping, directly return grasp(geometry of `the object part` of `the object`). For releasing, directly return release().
+- We also have a function called release() to release the object. For the releasing stage, directly call the release function.
+- Please directily generate the Python code. 
+- constraint codes of each stage are splitted by a line "### <stage constraints splitter> ###"
+- the unit of length is meter.
+- The stage start from 1.
+
+Here are some examples:
+
+### <stage constraints splitter> ###
+### stage ? sub-goal constraints
+def stage_?_subgoal_constraint1():
+  """constraints: <"grasp", "the area of the body of the banana"> """
+    return grasp("the area of the body of the banana")
+
+### <stage constraints splitter> ###
+### stage ? sub-goal constraints
+def stage_?_subgoal_constraint1():
+    """constraints: <"sub-goal constraints", "the axis of the body of the carrot", "the plane of the blade of the kitchen knife", "perpendicular"> """
+    mask1 = segment("the axis of the body of the carrot")
+    mask2 = segment("the plane of the blade of the kitchen knife")
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Calculate the axis of the carrot (pc1)
+    # Compute the covariance matrix of the points in the point cloud
+    covariance_matrix_carrot = np.cov(pc1.T)
+    # Get the eigenvalues and eigenvectors of the covariance matrix
+    eigenvalues_carrot, eigenvectors_carrot = np.linalg.eig(covariance_matrix_carrot)
+    # The eigenvector corresponding to the largest eigenvalue is the axis of the carrot
+    carrot_axis = eigenvectors_carrot[:, np.argmax(eigenvalues_carrot)]
+
+    # Calculate the normal vector of the kitchen knife surface (pc2)
+    covariance_matrix_knife = np.cov(pc2.T)
+    eigenvalues_knife, eigenvectors_knife = np.linalg.eig(covariance_matrix_knife)
+    # The eigenvector corresponding to the smallest eigenvalue is the normal vector of the surface
+    knife_surface_normal = eigenvectors_knife[:, np.argmin(eigenvalues_knife)]
+
+    # Normalize both vectors
+    carrot_axis = carrot_axis / np.linalg.norm(carrot_axis)
+    knife_surface_normal = knife_surface_normal / np.linalg.norm(knife_surface_normal)
+    
+    # Compute the dot product between the carrot axis and knife surface normal
+    dot_product = np.dot(carrot_axis, knife_surface_normal)
+    
+    # The cost is based on how close the dot product is to 0
+    cost = abs(dot_product)
+    
+    return cost
+
+def stage_?_subgoal_constraint2():
+    """constraints: <"sub-goal constraints", "the center of the body of the carrot", "the center of the body of the kitchen knife", "directly above by 10cm"> """
+    mask1 = segment("the center of the body of the carrot")
+    mask2 = segment("the center of the body of the kitchen knife")
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Compute the center of mass (mean position) for the carrot and the knife blade
+    carrot_center = np.mean(pc1, axis=0)
+    knife_center = np.mean(pc2, axis=0)
+    
+    # Calculate the horizontal distance (x, y coordinates) between the centers
+    horizontal_distance = np.linalg.norm(carrot_center[:2] - knife_center[:2])
+    
+    # Calculate the vertical distance (z coordinate) between the centers
+    vertical_distance = knife_center[2] - carrot_center[2]
+    
+    cost = abs(vertical_distance) + horizontal_distance
+    
+    return cost
+    
+
+### <stage constraints splitter> ###
+### stage ? sub-goal constraints
+def stage_?_subgoal_constraint1():
+    """constraints: <"release"> """
+    release()
+    return
+
+Please write the codes below:
+### <stage constraints splitter> ###
+### stage 1 sub-goal constraints (if any)
+## if it is a grasping constaints
+def stage_1_subgoal_constraint1():
+    """constraints: <?, ?> """
+    mask = segment(?)
+    return grasp(mask)
+
+
+def stage_1_subgoal_constraint1():
+    """constraints: <?, ?, ?, ?>"""
+    mask1 = segment(?)
+    mask2 = segment(?)
+    ## TODO: must have these line
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+    ## end TODO
+    ...
+    return cost
+# Add more sub-goal constraints if needed
+...
+
+### stage 1 path constraints (if any)
+def stage_1_path_constraint1():
+    """constraints: <?, ?, ?, ?>"""
+    mask1 = segment(?)
+    mask2 = segment(?)
+    ## TODO: must have these line
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+    ## end TODO
+    ...
+    return cost
+
+# Add more path constraints if needed
+...
+
+Finally, write a list of object parts we need to segment:
+object_to_segment = [?]

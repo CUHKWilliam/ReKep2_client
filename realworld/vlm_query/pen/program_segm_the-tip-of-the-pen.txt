@@ -1,0 +1,8 @@
+## mask_indice: 2
+def segment_object(mask):
+    ## find out right part of image as mask_output, mask_output is in shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    right_half = mask[:, W//2:]  # Extract the right half of the mask
+    mask_output = np.zeros_like(mask)  # Create an empty array of same shape as mask
+    mask_output[:, W//2:] = right_half  # Assign the right half to the output mask
+    return mask_output

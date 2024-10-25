@@ -1,0 +1,15 @@
+## mask_indice: 3
+def segment_object(mask):
+    ## find out center of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # Initialize an array of the same shape as the mask to store the center axis
+    mask_output = np.zeros_like(mask, dtype=bool)
+    
+    # Find the center column of the image
+    center_column = W // 2
+    
+    # Set the center column as True in the mask_output
+    mask_output[:, center_column] = mask[:, center_column]
+    
+    return mask_output

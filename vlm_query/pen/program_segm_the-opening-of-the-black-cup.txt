@@ -1,0 +1,18 @@
+## mask_indice: 1
+def segment_object(mask):
+    ## find out edge of image as mask_output, mask_output should still be in the shape (H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # Create an empty mask for the output, same size as input
+    mask_output = np.zeros((H, W), dtype=bool)
+    
+    # Loop through each pixel and detect edges by comparing neighboring pixels
+    for i in range(1, H-1):
+        for j in range(1, W-1):
+            # Check if this pixel is part of the object and has at least one background pixel as a neighbor
+            if mask[i, j] == True:
+                if (mask[i-1, j] == False or mask[i+1, j] == False or
+                    mask[i, j-1] == False or mask[i, j+1] == False):
+                    mask_output[i, j] = True
+
+    return mask_output

@@ -1,0 +1,28 @@
+- For a rotating object part, the hinge / axis and the handle are of the opposite position.  For example, for the door, if the handle is on the left of the surface of the door, the hinge should locate at the right edge of the surface of the door.
+- For a sliding body, the slider should be parallel to the edge of the frame.
+- To find out the body / the area of an object, just copy the whole given mask
+- To find the top edge of a segmentation mask "mask" here is a sample code:
+def find_top_edge_with_width(mask, edge_width=5):
+    """
+    Find the top edge of a given 2D boolean mask array with a specified edge width.
+    
+    Parameters:
+    mask (numpy.ndarray): 2D numpy boolean array where True represents the object.
+    edge_width (int): The width of the edge, extending downward from the topmost True value.
+    
+    Returns:
+    numpy.ndarray: 2D boolean array of the same shape as mask, where the top edge is True.
+    """
+    # Initialize an array of the same shape as the mask to store the top edge
+    top_edge_mask = np.zeros_like(mask, dtype=bool)
+    
+    # Iterate through each column to find the topmost True value and apply edge width
+    for j in range(mask.shape[1]):
+        true_indices = np.where(mask[:, j])[0]  # Find row indices where the value is True in this column
+        if true_indices.size > 0:
+            topmost_index = true_indices[0]  # Get the topmost True index
+            # Define the edge as extending `edge_width` positions downward, if possible
+            end_index = min(mask.shape[0], topmost_index + edge_width)  # Ensure it doesn't go out of bounds
+            top_edge_mask[topmost_index:end_index, j] = True  # Set the edge in the new mask
+    
+    return top_edge_mask

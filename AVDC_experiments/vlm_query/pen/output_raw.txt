@@ -1,0 +1,150 @@
+```python
+### <stage constraints splitter> ###
+### stage 1 sub-goal constraints (Grasping stage)
+
+def stage_1_subgoal_constraint1():
+    """constraints: <"grasp", "the area of the body of the pen"> """
+    return grasp("the area of the body of the pen")
+
+### <stage constraints splitter> ###
+### stage 2 sub-goal constraints (Align the pen with the black cup opening)
+
+def stage_2_subgoal_constraint1():
+    """constraints: <"sub-goal constraints", "the center of the tip of the pen", "the center of the opening of the black cup", "directly above around 5 centimeters"> """
+    mask1 = segment("the center of the tip of the pen")
+    mask2 = segment("the center of the opening of the black cup")
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Compute the center of mass (mean position) for the pen tip and the cup opening
+    pen_tip_center = np.mean(pc1, axis=0)
+    cup_opening_center = np.mean(pc2, axis=0)
+    
+    # Calculate the horizontal distance (x, y coordinates) between the centers
+    horizontal_distance = np.linalg.norm(pen_tip_center[:2] - cup_opening_center[:2])
+    
+    # Calculate the vertical distance between the centers; pen tip should be 5cm above the cup opening
+    vertical_distance = abs(pen_tip_center[2] - (cup_opening_center[2] + 0.05))
+    
+    cost = horizontal_distance + vertical_distance
+    
+    return cost
+
+### stage 2 path constraints
+
+def stage_2_path_constraint1():
+    """constraints: <"path constraints", "the axis of the body of the pen", "the axis of the opening of the black cup", "parallel"> """
+    mask1 = segment("the axis of the body of the pen")
+    mask2 = segment("the axis of the opening of the black cup")
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Find pen axis as the eigenvector of the largest eigenvalue
+    covariance_matrix_pen = np.cov(pc1.T)
+    eigenvalues_pen, eigenvectors_pen = np.linalg.eig(covariance_matrix_pen)
+    pen_axis = eigenvectors_pen[:, np.argmax(eigenvalues_pen)]
+    
+    # Find black cup axis as the eigenvector of the largest eigenvalue
+    covariance_matrix_cup = np.cov(pc2.T)
+    eigenvalues_cup, eigenvectors_cup = np.linalg.eig(covariance_matrix_cup)
+    cup_axis = eigenvectors_cup[:, np.argmax(eigenvalues_cup)]
+
+    # Normalize both vectors
+    pen_axis = pen_axis / np.linalg.norm(pen_axis)
+    cup_axis = cup_axis / np.linalg.norm(cup_axis)
+
+    # Dot product of both axes should be 1 if parallel
+    dot_product = np.dot(pen_axis, cup_axis)
+    cost = abs(dot_product - 1)
+
+    return cost
+
+### <stage constraints splitter> ###
+### stage 3 sub-goal constraints (Insert the pen into the black cup)
+
+def stage_3_subgoal_constraint1():
+    """constraints: <"sub-goal constraints", "the center of the body of the pen", "the plane of the opening of the black cup", "inside"> """
+    mask1 = segment("the center of the body of the pen")
+    mask2 = segment("the plane of the opening of the black cup")
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Compute the center of mass (mean position) for the pen's body and the cup's opening plane
+    pen_body_center = np.mean(pc1, axis=0)
+    cup_plane_mean = np.mean(pc2, axis=0)
+
+    # This essentially ensures that the pen body is inside the cup opening plane
+    # Calculate distance between pen's body center and the cup's opening plane
+    vertical_distance = abs(pen_body_center[2] - cup_plane_mean[2])
+
+    # If the pen's body is above the plane, penalize significantly
+    if vertical_distance > 0:
+        cost = vertical_distance
+    else:
+        cost = 0
+
+    return cost
+
+### stage 3 path constraints
+
+def stage_3_path_constraint1():
+    """constraints: <"path constraints", "the center of the tip of the pen", "the center of the opening of the black cup", "directly above around 1 centimeter"> """
+    mask1 = segment("the center of the tip of the pen")
+    mask2 = segment("the center of the opening of the black cup")
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Compute the center of mass (mean position) for the pen tip and the cup opening
+    pen_tip_center = np.mean(pc1, axis=0)
+    cup_opening_center = np.mean(pc2, axis=0)
+    
+    # Calculate the horizontal distance (x, y coordinates) between the centers
+    horizontal_distance = np.linalg.norm(pen_tip_center[:2] - cup_opening_center[:2])
+    
+    # Calculate the vertical distance, where pen tip should be 1cm above the cup opening
+    vertical_distance = abs(pen_tip_center[2] - (cup_opening_center[2] + 0.01))
+
+    cost = horizontal_distance + vertical_distance
+    
+    return cost
+
+### <stage constraints splitter> ###
+### stage 4 sub-goal constraints (Releasing stage)
+
+def stage_4_subgoal_constraint1():
+    """constraints: <"release"> """
+    release()
+    return
+
+### <stage constraints splitter> ###
+
+object_to_segment = [
+    "the center of the tip of the pen", 
+    "the axis of the body of the pen", 
+    "the center of the body of the pen",
+    "the center of the opening of the black cup", 
+    "the plane of the opening of the black cup", 
+    "the axis of the opening of the black cup",
+    "the area of the body of the pen",
+]
+```

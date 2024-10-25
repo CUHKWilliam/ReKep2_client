@@ -1,0 +1,16 @@
+## mask_indice: 6
+def segment_object(mask):
+    ## find out body of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # Initialize the output mask with the same shape as the input mask
+    mask_output = np.zeros_like(mask, dtype=bool)
+    
+    # Iterate through each row and column to find the body of the black nail
+    for i in range(H):
+        for j in range(W):
+            # If the pixel is part of the object (True in the mask), include it in the output
+            if mask[i, j]:
+                mask_output[i, j] = True
+    
+    return mask_output

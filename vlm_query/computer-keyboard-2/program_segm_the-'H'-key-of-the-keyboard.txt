@@ -1,0 +1,9 @@
+## mask_indice: 7
+def segment_object(mask):
+    # Initialize an array of the same shape as the mask to store the output
+    mask_output = np.zeros_like(mask, dtype=bool)
+    
+    # Set the mask_output to True wherever the input mask is True
+    mask_output[mask > 0] = True
+    
+    return mask_output

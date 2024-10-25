@@ -1,0 +1,36 @@
+def stage_2_path_constraint1():
+    """constraints: <"path constraints", "the axis of the body of the pen", "the axis of the cup opening of the black cup", "parallel"> """
+    mask1 = segment("the axis of the body of the pen")
+    mask2 = segment("the axis of the cup opening of the black cup")
+
+    ## TODO: must have these line
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+    ## end TODO
+
+    # Compute the axis of the pen (eigenvector with largest eigenvalue)
+    covariance_matrix_pen = np.cov(pc1.T)
+    eigenvalues_pen, eigenvectors_pen = np.linalg.eig(covariance_matrix_pen)
+    pen_axis = eigenvectors_pen[:, np.argmax(eigenvalues_pen)]
+
+    # Compute the axis of the cup opening (eigenvector with smallest eigenvalue)
+    covariance_matrix_cup = np.cov(pc2.T)
+    eigenvalues_cup, eigenvectors_cup = np.linalg.eig(covariance_matrix_cup)
+    cup_axis = eigenvectors_cup[:, np.argmin(eigenvalues_cup)]
+
+    # Normalize both axes
+    pen_axis = pen_axis / np.linalg.norm(pen_axis)
+    cup_axis = cup_axis / np.linalg.norm(cup_axis)
+
+    # Calculate the dot product between the pen axis and cup axis (for parallel, the dot product should be close to 1 or -1)
+    dot_product = np.dot(pen_axis, cup_axis)
+    
+    # The cost is based on deviation from parallel alignment (1 or -1)
+    cost = abs(abs(dot_product) - 1)
+
+    return cost
+

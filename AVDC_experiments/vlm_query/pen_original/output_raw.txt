@@ -1,0 +1,118 @@
+```python
+import numpy as np
+
+### <stage constraints splitter> ###
+### stage 1 sub-goal constraints (if any)
+"""constraints: <"grasp", "the body of the pen"> """
+def stage_1_subgoal_constraint1():
+    return grasp("the body of the pen")
+
+### <stage constraints splitter> ###
+### stage 2 sub-goal constraints
+"""constraints: <"sub-goal constraints", "the point of the pen tip", "the plane of cup opening of the black cup", "above around 10 centimeters">"""
+def stage_2_subgoal_constraint1():
+    mask1 = segment("the point of the pen tip")
+    mask2 = segment("the plane of cup opening of the black cup")
+    pc1 = mask_to_pc(mask1)
+    pc2 = mask_to_pc(mask2)
+
+    # Calculate the average position of the point cloud points
+    pen_tip_position = np.mean(pc1, axis=0)
+    cup_opening_plane_position = np.mean(pc2, axis=0)
+
+    # Calculate distance in z-axis (assuming vertical axis)
+    distance = np.abs(pen_tip_position[2] - cup_opening_plane_position[2])
+    
+    cost = np.abs(distance - 10.0) # Ideal distance is 10 centimeters
+    
+    return cost
+
+### <stage constraints splitter> ###
+### stage 2 path constraints
+"""constraints: <"path constraints", "the axis of the pen", "the plane of the surface of the table", "parallel">"""
+def stage_2_path_constraint1():
+    mask1 = segment("the axis of the pen")
+    mask2 = segment("the plane of the surface of the table")
+    pc1 = mask_to_pc(mask1)
+    pc2 = mask_to_pc(mask2)
+
+    # Calculate the axis of the pen (pc1)
+    covariance_matrix_pen = np.cov(pc1.T)
+    eigenvalues_pen, eigenvectors_pen = np.linalg.eig(covariance_matrix_pen)
+    pen_axis = eigenvectors_pen[:, np.argmax(eigenvalues_pen)]
+
+    # Calculate the normal vector of the table plane (pc2)
+    covariance_matrix_table = np.cov(pc2.T)
+    eigenvalues_table, eigenvectors_table = np.linalg.eig(covariance_matrix_table)
+    table_normal = eigenvectors_table[:, np.argmin(eigenvalues_table)]
+
+    # Normalize both vectors
+    pen_axis = pen_axis / np.linalg.norm(pen_axis)
+    table_normal = table_normal / np.linalg.norm(table_normal)
+    
+    # Compute the dot product between the pen axis and table normal
+    dot_product = np.dot(pen_axis, table_normal)
+
+    # The cost is based on how close the dot product is to 0 (which indicates parallel)
+    cost = abs(dot_product)
+    
+    return cost
+
+### <stage constraints splitter> ###
+### stage 3 path constraints
+"""constraints: <"path constraints", "the point of the pen tip", "the plane of cup opening of the black cup", "vertical">"""
+def stage_3_path_constraint1():
+    mask1 = segment("the point of the pen tip")
+    mask2 = segment("the plane of cup opening of the black cup")
+    pc1 = mask_to_pc(mask1)
+    pc2 = mask_to_pc(mask2)
+
+    # Calculate the average position of the point cloud points
+    pen_tip_position = np.mean(pc1, axis=0)
+    cup_opening_plane_position = np.mean(pc2, axis=0)
+
+    # Calculate the vertical alignment (assuming z-axis is vertical)
+    vertical_distance = np.abs(pen_tip_position[2] - cup_opening_plane_position[2])
+    horizontal_distance = np.linalg.norm(pen_tip_position[:2] - cup_opening_plane_position[:2]) # only x and y
+
+    # The cost is based on how close the horizontal distance is to 0 (perfectly vertical)
+    cost = horizontal_distance
+    
+    return cost
+
+### <stage constraints splitter> ###
+### stage 3 sub-goal constraints
+"""constraints: <"sub-goal constraints", "the point of the pen tip", "the point of the cup bottom of the black cup", "above around 1 centimeter">"""
+def stage_3_subgoal_constraint1():
+    mask1 = segment("the point of the pen tip")
+    mask2 = segment("the point of the cup bottom of the black cup")
+    pc1 = mask_to_pc(mask1)
+    pc2 = mask_to_pc(mask2)
+
+    # Calculate the average positions
+    pen_tip_position = np.mean(pc1, axis=0)
+    cup_bottom_position = np.mean(pc2, axis=0)
+
+    # Calculate the distance in z-axis
+    distance = np.abs(pen_tip_position[2] - cup_bottom_position[2])
+    
+    cost = np.abs(distance - 1.0) # Ideal distance is 1 centimeter
+    
+    return cost
+
+### <stage constraints splitter> ###
+### stage 4 sub-goal constraints (if any)
+"""constraints: <"release"> """
+def stage_4_subgoal_constraint1():
+    release()
+    return
+
+# List of object parts we need to segment
+object_to_segment = [
+    "the body of the pen",
+    "the point of the pen tip of the pen",
+    "the plane of cup opening of the black cup",
+    "the point of the cup bottom of the black cup",
+    "the plane of the surface of the table"
+]
+```

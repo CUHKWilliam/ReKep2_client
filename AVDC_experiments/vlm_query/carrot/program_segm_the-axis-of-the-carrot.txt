@@ -1,0 +1,9 @@
+## mask_indice: 1
+def segment_object(mask):
+    ## find out center of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # Create an empty mask of the same shape
+    mask_output = mask.copy()
+    
+    return mask_output

@@ -1,0 +1,13 @@
+## mask_indice: 1
+def segment_object(mask):
+    ## find out edge of right part of image as mask_output, mask_output is in shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    mask_output = np.zeros((H, W), dtype=bool)
+    
+    for i in range(H):
+        for j in range(W - 1):
+            if mask[i, j] != mask[i, j + 1]:
+                mask_output[i, j] = True
+                mask_output[i, j + 1] = True
+                
+    return mask_output

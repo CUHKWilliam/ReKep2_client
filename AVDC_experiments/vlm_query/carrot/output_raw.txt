@@ -1,0 +1,171 @@
+### <stage constraints splitter> ###
+### stage 1 sub-goal constraints (grasping stage)
+```python
+def stage_1_subgoal_constraint1():
+    """constraints: <'grasp', 'the area of the handle of the kitchen knife'> """
+    return grasp('the area of the handle of the kitchen knife')
+```
+
+### <stage constraints splitter> ###
+### stage 2 sub-goal constraints
+```python
+def stage_2_subgoal_constraint1():
+    """constraints: <"sub-goal constraints", "the center of the blade of the kitchen knife", "the center of the body of the carrot", "the center of the blade of the kitchen knife is directly above the center of the body of the carrot by 10 centimeters"> """
+    mask1 = segment("the center of the blade of the kitchen knife", -1)
+    mask2 = segment("the center of the body of the carrot", -1)
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+    
+    # Compute the mean position of the blade and the body of the carrot
+    kitchen_knife_center = np.mean(pc1, axis=0)
+    carrot_center = np.mean(pc2, axis=0)
+
+    # Calculate the horizontal distance (x, y coordinates) between the centers
+    horizontal_distance = np.linalg.norm(kitchen_knife_center[:2] - carrot_center[:2])
+
+    # The knife blade should be 10cm above the carrot
+    vertical_distance = kitchen_knife_center[2] - carrot_center[2] - 0.10
+
+    # The cost is the sum of deviations in distance
+    cost = abs(vertical_distance) + horizontal_distance
+    
+    return cost
+```
+
+### stage 2 path constraints
+```python
+def stage_2_path_constraint1():
+    """constraints: <"path constraints", "the axis of the carrot", "the plane of the blade of the kitchen knife", "the axis of the carrot is perpendicular to the plane of the blade of the kitchen knife"> """
+    mask1 = segment("the axis of the carrot", -1)
+    mask2 = segment("the plane of the blade of the kitchen knife", -1)
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Calculate the axis of the carrot (pc1)
+    covariance_matrix_carrot = np.cov(pc1.T)
+    eigenvalues_carrot, eigenvectors_carrot = np.linalg.eig(covariance_matrix_carrot)
+    carrot_axis = eigenvectors_carrot[:, np.argmax(eigenvalues_carrot)]
+
+    # Calculate the normal vector of the plane of the blade (pc2)
+    covariance_matrix_knife = np.cov(pc2.T)
+    eigenvalues_knife, eigenvectors_knife = np.linalg.eig(covariance_matrix_knife)
+    knife_blade_normal = eigenvectors_knife[:, np.argmin(eigenvalues_knife)]
+
+    # Normalize the vectors
+    carrot_axis = carrot_axis / np.linalg.norm(carrot_axis)
+    knife_blade_normal = knife_blade_normal / np.linalg.norm(knife_blade_normal)
+    
+    # Compute the dot product (it should be close to zero for perpendicularity)
+    dot_product = np.dot(carrot_axis, knife_blade_normal)
+    
+    cost = abs(dot_product) * 5.  # Increase weight for angular constraints
+    
+    return cost
+```
+
+```python
+def stage_2_path_constraint2():
+    """constraints: <"path constraints", "the heading direction of the blade of the kitchen knife", "the plane of the surface of the table", "the heading direction of the blade of the kitchen knife is parallel to the plane of the surface of the table"> """
+    mask1 = segment("the heading direction of the blade of the kitchen knife", -1)
+    mask2 = segment("the plane of the surface of the table", -1)
+
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Calculate the heading direction of the knife blade (pc1)
+    covariance_matrix_knife = np.cov(pc1.T)
+    eigenvalues_knife, eigenvectors_knife = np.linalg.eig(covariance_matrix_knife)
+    knife_blade_heading = eigenvectors_knife[:, np.argmin(eigenvalues_knife)]
+
+    # Calculate the normal vector of the plane of the surface of the table (pc2)
+    covariance_matrix_table = np.cov(pc2.T)
+    eigenvalues_table, eigenvectors_table = np.linalg.eig(covariance_matrix_table)
+    table_surface_normal = eigenvectors_table[:, np.argmin(eigenvalues_table)]
+
+    # Normalize both directions
+    knife_blade_heading = knife_blade_heading / np.linalg.norm(knife_blade_heading)
+    table_surface_normal = table_surface_normal / np.linalg.norm(table_surface_normal)
+
+    # Compute the dot product for alignment
+    dot_product = np.dot(knife_blade_heading, table_surface_normal)
+
+    # The cost is based on deviation from parallelism (should be close to 1)
+    cost = abs(1 - dot_product) * 5.
+
+    return cost
+```
+
+### <stage constraints splitter> ###
+### stage 3 sub-goal constraints
+```python
+def stage_3_subgoal_constraint1():
+    """constraints: <"sub-goal constraints", "the center of the blade of the kitchen knife", "the center of the surface of the table", "the area of the blade of the kitchen knife is above the area of the surface of the table by 1 centimeter"> """
+    mask1 = segment("the center of the blade of the kitchen knife", -1)
+    mask2 = segment("the center of the surface of the table", -1)
+
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Compute the mean positions of the blade and the table
+    blade_center = np.mean(pc1, axis=0)
+    table_center = np.mean(pc2, axis=0)
+
+    # Calculate the distance between positions of the knife's blade and the table surface (ideally 1 cm above)
+    vertical_distance = blade_center[2] - table_center[2] - 0.01
+    
+    # The cost is the absolute value of the deviation
+    cost = abs(vertical_distance)
+
+    return cost
+```
+
+### stage 3 path constraints (inherited from stage 2)
+```python
+def stage_3_path_constraint1():
+    # Re-using the same path constraints from stage 2 (perpendicularity and parallelism)
+
+    return stage_2_path_constraint1()
+
+def stage_3_path_constraint2():
+    return stage_2_path_constraint2()
+```
+
+### <stage constraints splitter> ###
+### stage 4 sub-goal constraints (releasing stage)
+```python
+def stage_4_subgoal_constraint1():
+    """constraints: <'release'> """
+    release()
+    return
+```
+
+### Final List of Object Parts to Segment
+```python
+object_to_segment = [
+    "the area of the handle of the kitchen knife",
+    "the center of the blade of the kitchen knife",
+    "the heading direction of the blade of the kitchen knife",
+    "the axis of the carrot",
+    "the center of the body of the carrot",
+    "the plane of the surface of the table",
+    "the center of the surface of the table"
+]
+```

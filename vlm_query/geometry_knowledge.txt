@@ -1,0 +1,115 @@
+Here are some geometry-related knowledge:
+
+Example 1: Given pc as the point cloud of a plate, write a code to find out its axis
+def find_plate_normal(pc):
+    """
+    Finds the normal (normal vector) of a plate given its point cloud.
+
+    Args:
+        pc: numpy array of shape (N, 3), point cloud of the plate.
+
+    Returns:
+        plate_normal: A normalized vector representing the normal vector of the plate.
+    """
+    # Compute the covariance matrix of the point cloud
+    covariance_matrix = np.cov(pc.T)
+    
+    # Perform eigen decomposition to get eigenvalues and eigenvectors
+    eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
+    
+    # The eigenvector corresponding to the smallest eigenvalue is the normal vector to the plate's surface
+    plate_normal = eigenvectors[:, np.argmin(eigenvalues)]
+    
+    # Normalize the normal vector
+    plate_normal = plate_normal / np.linalg.norm(plate_normal)
+    
+    return plate_normal
+
+Example 2: given pc as the point cloud of a cylinder, write a code to find out its axis
+def find_cylinder_axis(pc):
+    """
+    Finds the axis of a cylinder given its point cloud.
+
+    Args:
+        pc: numpy array of shape (N, 3), point cloud of the cylinder.
+
+    Returns:
+        cylinder_axis: A normalized vector representing the axis of the cylinder.
+    """
+    # Compute the covariance matrix of the point cloud
+    covariance_matrix = np.cov(pc.T)
+    
+    # Perform eigen decomposition to get eigenvalues and eigenvectors
+    eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
+    
+    # The eigenvector corresponding to the largest eigenvalue represents the axis of the cylinder
+    cylinder_axis = eigenvectors[:, np.argmax(eigenvalues)]
+    
+    # Normalize the axis vector
+    cylinder_axis = cylinder_axis / np.linalg.norm(cylinder_axis)
+    
+    return cylinder_axis
+
+Example 3: Given pc1 is the point cloud of the point 1, pc2 is the point cloud of the point 2, write a code to measure the cost that point 2 is directly below point 1
+def measure_point_below(pc1, pc2):
+    """
+    Measures the cost that point 2 is directly below point 1.
+    
+    Args:
+        pc1: numpy array of shape (N, 3), point cloud of point 1.
+        pc2: numpy array of shape (M, 3), point cloud of point 2.
+
+    Returns:
+        cost: a non-negative float representing the extent to which point 2 is directly below point 1.
+              The lower the cost, the more point 2 is directly below point 1.
+    """
+    # Compute the center of mass (mean position) for point 1 and point 2
+    point1_center = np.mean(pc1, axis=0)
+    point2_center = np.mean(pc2, axis=0)
+    
+    # Calculate the horizontal distance (x, y coordinates) between the centers
+    horizontal_distance = np.linalg.norm(point1_center[:2] - point2_center[:2])
+    
+    # Calculate the vertical distance (z coordinate) between the centers
+    vertical_distance = point1_center[2] - point2_center[2]
+    
+    # If point 2 is not below point 1, add a large penalty to the cost
+    if vertical_distance < 0:
+        cost = abs(vertical_distance) + horizontal_distance + 1000  # Large penalty for incorrect vertical position
+    else:
+        cost = horizontal_distance
+    
+    return cost
+
+Example 4: Given pc1 is the point cloud of the point 1, pc2 is the point cloud of the point 2, write a code to measure the cost that point 2 is directly to the left of point 1 by 10 cm
+def measure_point_left_by_10cm(pc1, pc2):
+    """
+    Measures the cost that point 2 is directly to the left of point 1 by 10 cm.
+    
+    Args:
+        pc1: numpy array of shape (N, 3), point cloud of point 1.
+        pc2: numpy array of shape (M, 3), point cloud of point 2.
+
+    Returns:
+        cost: a non-negative float representing the extent to which point 2 is directly to the left of point 1 by 10 cm.
+              The lower the cost, the closer point 2 is to being exactly 10 cm to the left of point 1.
+    """
+    # Compute the center of mass (mean position) for point 1 and point 2
+    point1_center = np.mean(pc1, axis=0)
+    point2_center = np.mean(pc2, axis=0)
+    
+    # Calculate the horizontal distance (x-axis) between point 1 and point 2
+    x_distance = point2_center[0] - point1_center[0]
+    
+    # Calculate the y and z distances (vertical and depth positions)
+    y_distance = abs(point2_center[1] - point1_center[1])
+    z_distance = abs(point2_center[2] - point1_center[2])
+    
+    # The ideal x distance should be -0.10 meters (to the left by 10 cm)
+    cost = abs(x_distance + 0.10) + y_distance + z_distance  # Sum all deviations from ideal positioning
+    
+    return cost
+
+- To find out the heading direction of long-shaped object, find the max PCA component.
+- To find out the normal of a surface, find the min PCA component.
+- perpendicular to a plane is to be parallel to its normal (i.e. cost = (1 - dot_product) * 5.)

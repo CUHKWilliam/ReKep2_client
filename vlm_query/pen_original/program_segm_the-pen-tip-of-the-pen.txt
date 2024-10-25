@@ -1,0 +1,10 @@
+## mask_indice: 2
+def segment_object(mask):
+    ## find out area of image as mask_output, mask_output is in shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # For the pen tip, assign right part of the mask as the output
+    mask_output = np.zeros_like(mask)
+    mask_output[:, W//2:] = mask[:, W//2:]
+    
+    return mask_output

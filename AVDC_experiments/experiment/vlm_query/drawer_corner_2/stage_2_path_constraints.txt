@@ -1,0 +1,34 @@
+def stage_2_path_constraint1():
+    """constraints: <"path constraints", "the heading direction of the handle of the drawer", "the heading direction of the body of the drawer", "the heading direction of the handle of the drawer is parallel to the heading direction of the body of the drawer">"""
+    mask1 = segment("the heading direction of the handle of the drawer", -1)
+    mask2 = segment("the heading direction of the body of the drawer", -1)
+    
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Calculate the heading direction of the handle of the drawer (pc1)
+    covariance_matrix_handle = np.cov(pc1.T)
+    eigenvalues_handle, eigenvectors_handle = np.linalg.eig(covariance_matrix_handle)
+    handle_heading = eigenvectors_handle[:, np.argmax(eigenvalues_handle)]
+
+    # Calculate the heading direction of the body of the drawer (pc2)
+    covariance_matrix_body = np.cov(pc2.T)
+    eigenvalues_body, eigenvectors_body = np.linalg.eig(covariance_matrix_body)
+    body_heading = eigenvectors_body[:, np.argmax(eigenvalues_body)]
+
+    # Normalize both vectors
+    handle_heading = handle_heading / np.linalg.norm(handle_heading)
+    body_heading = body_heading / np.linalg.norm(body_heading)
+    
+    # Compute the dot product between the handle heading and body heading
+    dot_product = np.dot(handle_heading, body_heading)
+    
+    # The cost is based on how close the dot product is to 1 (parallel)
+    cost = abs(dot_product - 1) * 5.
+    
+    return cost
+

@@ -1,0 +1,16 @@
+Example 2:
+            <IMAGE>mask_0.png</IMAGE>
+            <IMAGE>mask_1.png</IMAGE>
+            <IMAGE>mask_2.png</IMAGE>
+            <IMAGE>mask_3.png</IMAGE>
+            <IMAGE>mask_4.png</IMAGE>
+            There are totally 5 pair of images. 
+            For each pair, the left image is the image of the glass. The right image is the segmentation mask highlighted in white to represent different parts of the glass. These images are named as image i, ... (i=0, 1, 2, ...)
+            Please select one of the image and use it to get the lip of the glass.
+            - Output: image i, `part` (i=0,1,2... is the index number).
+            - Where `part` is geometry, like the edge, the center, left point, right, point, etc..
+            - You can analysis the problem if needed, but please output the final result in a seperate line in the format image i, `part`.
+            - At the end, output "<splitter>"
+            - Left part of image 0 highlights the background. Left part of the image 1 highlights the top part of inner wall of the glass. Left part of image 2 highlights the container part of the glass. Left part of the image 3 highlights the support of the glass. Left part of the image 4 highlights the base of the glass. The lip of the glass should be the top circular edge of the glass wall. So to find out the lip of the glass, we should get the edge of the top inner wall of the glass, which is the segmentaion image of image 1.
+            # You can add more explainations here
+            image 1, edge

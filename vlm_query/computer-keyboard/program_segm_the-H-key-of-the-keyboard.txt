@@ -1,0 +1,6 @@
+## mask_indice: 24
+def segment_object(mask):
+    ## find out center of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    return mask

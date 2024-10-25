@@ -1,0 +1,3 @@
+## mask_indice: 8
+def segment_object(mask):
+    return mask

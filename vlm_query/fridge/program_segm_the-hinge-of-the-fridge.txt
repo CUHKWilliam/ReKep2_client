@@ -1,0 +1,15 @@
+## mask_indice: 2
+def segment_object(mask):
+    ## find out right edge of image as mask_output, mask_output should still be in the shape (H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # Initialize an empty boolean array for the output.
+    mask_output = np.zeros((H, W), dtype=bool)
+    
+    # Iterate through each row and find the rightmost True value (the rightmost edge)
+    for i in range(H):
+        true_indices = np.where(mask[i, :])[0]
+        if true_indices.size > 0:
+            # Set the rightmost edge to True
+            mask_output[i, true_indices[-1] - 7: true_indices[-1]] = True
+    return mask_output

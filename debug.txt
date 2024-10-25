@@ -1,0 +1,43 @@
+For the task "put the pen into the black cup," the manipulation involves the following stages:
+
+1. Grasp the pen
+2. Align the pen with the opening of the black cup
+3. Insert the pen into the black cup
+
+Hence, we have 3 stages in total.
+
+Here are the constraint functions for each of the stages:
+
+### Stage 1: Grasp the pen
+```python
+<"grasp", "the pen">
+```
+
+### Stage 2: Align the pen with the opening of the black cup
+- Sub-goal constraint: At the end of this stage, the pen should be positioned above the opening of the black cup.
+- Path constraints: During the movement, ensure the pen is aligned vertically to smoothly transition to the insertion stage.
+
+```python
+<"sub-goal constraints", "the tip of the pen", "the plane of the cup opening of the black cup", "above around 5 centimeters">
+<"path constraints", "the axis of the pen", "the plane of the ground", "parallel">
+<"path constraints", "the axis of the pen", "the axis of the black cup", "aligned">
+```
+
+### Stage 3: Insert the pen into the black cup
+- Sub-goal constraint: At the end of this stage, the pen should be inside the black cup.
+- Path constraints: During the movement, ensure the pen remains aligned with the opening.
+
+```python
+<"sub-goal constraints", "the tip of the pen", "the bottom inside of the black cup", "inside around 5 centimeters">
+<"path constraints", "the axis of the pen", "the axis of the black cup", "aligned">
+```
+
+### Summary of object parts to track
+```python
+part_lists = ["the pen", "the tip of the pen", "the plane of the cup opening of the black cup", "the axis of the pen", "the axis of the black cup", "the bottom inside of the black cup", "the plane of the ground"]
+```
+
+### Number of stages
+```python
+num_stages = 3
+```

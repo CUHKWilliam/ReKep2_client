@@ -1,0 +1,4 @@
+def stage_4_path_constraint1():
+    """constraints: <"path constraints", "the heading direction of the gripper of the robot", "the plane of the surface of the keyboard", "the heading direction of the gripper of the robot is perpendicular to the plane of the surface of the keyboard">"""
+    return stage_2_path_constraint1()  # Same as stage 2 path constraint
+

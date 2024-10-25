@@ -1,0 +1,33 @@
+- For a rotating object part, the hinge / axis and the handle are of the opposite position, on the surface.  For example, for the door, if the handle is on the left of the surface of the door, the hinge should locate at the right edge of the surface of the door.
+- For a sliding body, the slider should be parallel to the edge of the frame.
+- To find out the body / the area of an object, just copy the whole given mask
+- To find the point, line, edge, etc.., leave a certain margin, don't just segment 1-pixel.
+- To find the top (right) edge of a segmentation mask "mask". First find out topmost (rightmost) pixel for each column, then remember to remove vertical (horizontal) line. 
+- directly find out the object if we want to segment the axis / edge / hinge of the object
+- If the object is masked in black and the background is in white, skip this image.
+- To segment the right edge of the segmentation mask, find the rightmost white point for each row, then find out the vertical line.
+- To find the door, the door should be directly attached to the handle.
+
+- Here is a sample code to find out top edge 
+    # Initialize an array of the same shape as the mask to store the top edge
+    top_edge_mask = np.zeros_like(mask, dtype=bool)
+    
+    # Iterate through each column to find the topmost True value and apply edge width
+    for j in range(mask.shape[1]):
+        true_indices = np.where(mask[:, j])[0]  # Find row indices where the value is True in this column
+        if true_indices.size > 0:
+            topmost_index = true_indices[0]  # Get the topmost True index
+            # Define the edge as extending `edge_width` positions downward, if possible
+            end_index = min(mask.shape[0], topmost_index + edge_width)  # Ensure it doesn't go out of bounds
+            top_edge_mask[topmost_index:end_index, j] = True  # Set the edge in the new mask
+    ## The above method will include other lean vertical line, so we need to remove the lean vertical line
+    # Define a vertical kernel for morphological operations
+    vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 20))  # (width, height)
+
+    # Apply morphological operations to remove vertical lines
+    # 1. Use morphological opening to remove vertical structures
+    vertical_lines_removed = cv2.morphologyEx(segmentation_image, cv2.MORPH_OPEN, vertical_kernel)
+
+    filtered_image = vertical_lines_removed
+
+    return filtered_image

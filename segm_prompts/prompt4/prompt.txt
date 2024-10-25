@@ -1,0 +1,5 @@
+This are images of piano keyboard labelled with the notes.
+<IMAGE>image.png</IMAGE>
+<IMAGE>image2.png</IMAGE>
+<IMAGE>image3.png</IMAGE>
+There is a group of two black keys and a group of three black keys on the keyboard. First identify which group the key is located in. Then identify the position of the key and the black keys in the group. Then answer what the key is.

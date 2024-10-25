@@ -1,0 +1,24 @@
+def stage_3_subgoal_constraint1():
+    """constraints: <"sub-goal constraints", "the center of the blade of the kitchen knife", "the center of the surface of the table", "the area of the blade of the kitchen knife is above the area of the surface of the table by 1 centimeter"> """
+    mask1 = segment("the center of the blade of the kitchen knife", -1)
+    mask2 = segment("the center of the surface of the table", -1)
+
+    if mask1.shape[-1] == 3:
+        pc1 = mask1
+        pc2 = mask2
+    else:
+        pc1 = mask_to_pc(mask1)
+        pc2 = mask_to_pc(mask2)
+
+    # Compute the mean positions of the blade and the table
+    blade_center = np.mean(pc1, axis=0)
+    table_center = np.mean(pc2, axis=0)
+
+    # Calculate the distance between positions of the knife's blade and the table surface (ideally 1 cm above)
+    vertical_distance = blade_center[2] - table_center[2] - 0.01
+    
+    # The cost is the absolute value of the deviation
+    cost = abs(vertical_distance)
+
+    return cost
+

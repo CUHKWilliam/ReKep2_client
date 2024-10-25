@@ -1,0 +1,9 @@
+## mask_indice: 26
+def segment_object(mask):
+    # Initialize an array of the same shape as the mask to store the output
+    mask_output = np.zeros_like(mask)
+    
+    # Set the mask_output to 1 where the mask is True (i.e., the 'I' key is segmented)
+    mask_output[mask > 0] = 1
+    
+    return mask_output

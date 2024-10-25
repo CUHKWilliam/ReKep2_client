@@ -1,0 +1,17 @@
+## mask_indice: 7
+def segment_object(mask):
+    ## find out axis of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # Initialize an array of the same shape as the mask to store the axis
+    mask_output = np.zeros_like(mask, dtype=bool)
+    
+    # Iterate through each column to find the center of the red stick (axis)
+    for j in range(W):
+        true_indices = np.where(mask[:, j])[0]  # Find row indices where the value is True in this column
+        if true_indices.size > 0:
+            # Find the middle point of the red stick in this column
+            middle_index = (true_indices[0] + true_indices[-1]) // 2
+            mask_output[middle_index, j] = True  # Set the axis in the new mask
+    
+    return mask_output

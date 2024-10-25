@@ -1,0 +1,15 @@
+## mask_indice: 1
+def segment_object(mask):
+    ## find out right side of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    
+    # Initialize the output mask with the same shape
+    mask_output = np.zeros_like(mask, dtype=bool)
+    
+    # Define the right side as the right half of the image
+    right_half = mask[:, W//2:]
+    
+    # Copy the right half to the output mask
+    mask_output[:, W//2:] = right_half
+    
+    return mask_output

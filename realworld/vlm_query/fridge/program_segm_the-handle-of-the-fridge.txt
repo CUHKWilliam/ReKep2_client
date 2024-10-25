@@ -1,0 +1,12 @@
+## mask_indice: 10
+def segment_object(mask):
+    ## find out area of image as mask_output, mask_output should still be in the shape(H, W)
+    H, W = mask.shape
+    mask_output = np.zeros_like(mask, dtype=bool)
+    
+    for i in range(H):
+        for j in range(W):
+            if mask[i, j]:  # If it's part of the original segmentation
+                mask_output[i, j] = True  # Mark it as part of the handle area
+    
+    return mask_output

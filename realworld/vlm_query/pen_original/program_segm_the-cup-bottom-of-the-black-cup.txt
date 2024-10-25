@@ -1,0 +1,7 @@
+## mask_indice: 3
+def segment_object(mask):
+    # find out bottom part of image as mask_output, mask_output is in shape(H, W)
+    H, W = mask.shape[0], mask.shape[1]
+    mask_output = np.zeros((H, W), dtype=bool)
+    mask_output[int(H*0.5):, :] = mask[int(H*0.5):, :]
+    return mask_output
