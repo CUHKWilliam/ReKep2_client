@@ -50,7 +50,7 @@ for robot_pos in robot_poses:
 import ipdb;ipdb.set_trace()
 cam_poses = np.stack(cam_poses, axis=0)
 trans_mat = cv2.estimateAffine3D(np.asarray([
-        cam_poses / 1000.
+        cam_poses
     ]), 
     np.asarray([
        robot_poses

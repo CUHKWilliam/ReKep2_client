@@ -71,6 +71,8 @@ class robot_controller:
     
     ## TODO: for gripper
     def gripper_move(self):
+        if DEBUG:
+            return
         one = np.array(1)
         zero = np.array(0)
         self.s_out = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -81,6 +83,8 @@ class robot_controller:
 
 
     def move_to_point(self, waypoint, compliant=False, wait=10):
+        if DEBUG:
+            return
         if compliant:
             Mass = np.array([1,1,1])   # to determine
             Inertia = 1*np.array([2, 2, 0.1])   # to determine
@@ -349,6 +353,8 @@ import pickle
 import paramiko
 from scp import SCPClient
 from communication import Client
+DEBUG = True
+
 class RemoteRobotClient(Client):
     def __init__(self,
                  server_ip,
@@ -369,23 +375,48 @@ class RemoteRobotClient(Client):
             local_data_file_path,
         )
         self.robot_controller = robot_controller()
+        ## TODO:
+        self.APPROACH0 =  np.array([1, 0, 0]).astype(np.float32)
+        self.BINORMAL0 = np.array([0, 1, 0]).astype(np.float32)
+    
+    def get_init_approach(self,):
+        return self.APPROACH0
+    
+    def get_init_binormal(self,):
+        return self.BINORMAL0
         
     def handle_data(self, data):
+        try:
+            action = np.fromstring(data, dtype=np.float32)
+            action = np.concatenate([action[:3], R.from_quat(action[3:]).as_euler("ZYX")])
+            self.robot_controller.move_to_point(action)
+            return
+        except:
+            pass
         type = data.split(":")[0]
-        content = data.split(":")[1]
+        content = ":".join(data.split(":")[1:])
         if content == "gripper open":
             self.robot_controller.gripper_move()
         elif content == "gripper close":
             self.robot_controller.gripper_move()
         else:
             if type == "action":
-                action = np.from_string(content, dtype=np.float32)
-                self.robot_controller.move_to_point(action)
+                if content == "close gripper" or content == "open gripper":
+                    self.robot_controller.gripper_move()
             elif type == "query":
                 if content == "ee_pose":
                     ee_pose = self.get_ee_pose()
                     ee_pose = ee_pose.astype(np.float32)
                     self.send(ee_pose.tostring())
+                elif content == "approach0":
+                    approach0 = self.get_init_approach()
+                    approach0 = approach0.astype(np.float32)
+                    self.send(approach0.tostring())
+                elif content == "binormal0":
+                    binormal0 = self.get_init_binormal()
+                    binormal0 = binormal0.astype(np.float32)
+                    self.send(binormal0.tostring())
+               
                     
     
     def get_ee_pose(self,):
@@ -397,5 +428,9 @@ class RemoteRobotClient(Client):
         
     def get_approach(self,):
         if DEBUG:
-            return np.array([0, 0, -1])
+            return np.array([0, 1, 0])
         import ipdb;ipdb.set_trace()
+        robot_ori = self.get_ee_pose()[3:]
+        mat = R.from_euler("ZYX", robot_ori).as_matrix()
+        approach = self.dot(self.APPROACH0, mat)
+        return approach

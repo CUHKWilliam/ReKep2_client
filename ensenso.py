@@ -11,9 +11,7 @@ import time
 from scipy.spatial.transform import Rotation as R
 import json
 
-extrinsic = np.array([[ 0.37943252,  0.29933713, -0.87545888,  0.46888271],
-       [-0.29118286,  0.93677002,  0.19409912, -0.08058141],
-       [ 0.87820471,  0.1812711 ,  0.44260285,  0.28193391]])
+
 
 class Ensenso():
     def __init__(self):
@@ -32,6 +30,9 @@ class Ensenso():
         self.verbose = False    
         self.open_camera()
         self.update_camera_params()
+        self.extrinsic = np.array([[ 0.37943252,  0.29933713, -0.87545888,  0.46888271],
+       [-0.29118286,  0.93677002,  0.19409912, -0.08058141],
+       [ 0.87820471,  0.1812711 ,  0.44260285,  0.28193391]])
     
     def update_camera_params(self):
         # param = json.dumps(json.load(open("data_collection/fast_scan2.json", "r")))

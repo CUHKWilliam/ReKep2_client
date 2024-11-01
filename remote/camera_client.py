@@ -28,7 +28,7 @@ class RemoteCameraClient(Client):
         )
         # self.camera = RealSense()
         self.camera = Ensenso()
-        
+    
     # def get_cam_obs(self,):
     #     image, depth = self.camera.capture(once=True)
     #     pcd = self.camera.get_pcd(image, depth / 1000.)
@@ -39,6 +39,7 @@ class RemoteCameraClient(Client):
     #         "points": pcs,
     #     }
     #     self.send(data)
+    
     
     def increase_brightness(self, img, value=70):
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -51,6 +52,10 @@ class RemoteCameraClient(Client):
         final_hsv = cv2.merge((h, s, v))
         img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
         return img
+    
+    def get_extrinsic(self,):
+        cam_extrinsic = self.camera.extrinsic
+        self.send(cam_extrinsic)        
 
     def get_cam_obs(self,):
         rgb, pcs = self.camera.get_cam_obs()

@@ -23,7 +23,8 @@ class Client:
             self.data_file_path = data_file_path
             self.local_lock_file_path = local_lock_file_path
             self.local_data_file_path = local_data_file_path
-        
+            with open(self.local_lock_file_path, "w") as f:
+                f.write("0")
             client = paramiko.SSHClient()
             client.load_system_host_keys()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -35,6 +36,7 @@ class Client:
         scp = self.scp
         while True:
             scp.get(self.lock_file_path, self.local_lock_file_path)
+            time.sleep(0.1)
             with open(self.local_lock_file_path, 'r') as f:
                 content = f.read().strip()
             if content == "1":
@@ -45,6 +47,7 @@ class Client:
         with open(self.local_lock_file_path, "w") as f:
             f.write("0")
         scp.put(self.local_lock_file_path, self.lock_file_path)
+        print("receive:", action)
         return action
 
     def _thread(self,):
@@ -63,7 +66,18 @@ class Client:
         with open(self.local_lock_file_path, "w") as f:
             f.write("1")
         self.scp.put(self.local_lock_file_path, self.lock_file_path)
-
+        print("send:", data)
+        self.check_read()
+    
+    def check_read(self,):
+        while True:
+            self.scp.get(self.lock_file_path, self.local_lock_file_path)
+            time.sleep(0.1)
+            with open(self.local_lock_file_path, "r") as f:
+                lock = f.read().strip()
+            if lock == "0":
+                break
+            
     def start(self,):
         t1 = threading.Thread(target=self._thread())
         t1.start()
