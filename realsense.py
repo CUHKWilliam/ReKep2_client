@@ -1,7 +1,7 @@
 import cv2                                # state of the art computer vision algorithms library
 import numpy as np                        # fundamental package for scientific computing
 import matplotlib.pyplot as plt           # 2D plotting library producing publication quality figures
-import pyrealsense2 as rs                 # Intel RealSense cross-platform open-source API
+import pyrealsense2 as rs
 import open3d as o3d
 import time
 
@@ -13,15 +13,9 @@ intr_fy = 385.8968200683594
 intr_ppx = 325.1910400390625
 intr_ppy = 237.3795928955078
 
-# extric_mat = np.array([[-0.26164651,  0.11053399, -0.95881351, 0.99496819 + 0.04],
-#  [ 0.9651535,   0.03454824, -0.25939381, 0.09863384 - 0.06],
-#  [ 0.00445348, -0.99327169, -0.1157217,  -0.05693541 - 0.05]])
-
-extric_mat = np.array(
-    [[-0.55102369, -0.09769575,  0.82875113,  0.12123387],
- [ 0.83379086, -0.10508816,  0.54198642, -0.21633408],
- [ 0.03414216,  0.98965247,  0.13936389,  0.02611314],]
-)
+extric_mat = np.array([[ 0.127463  ,  0.15756847, -0.97220515,  0.98854526 + 0.05],
+       [ 0.61643827,  0.08111378,  0.2140141 , -0.04002549 - 0.02],
+       [ 0.08883711, -0.64789406, -0.23134198, -0.00389725]])
 
 class RealSense():
     def __init__(self, ):
@@ -51,7 +45,7 @@ class RealSense():
         self.serial = serial
         self.ctx = rs.context()
         self.align = align
-        self.extric_mat = extric_mat
+        self.extrinsic = extric_mat
 
     def get_data(self,):
         pipe = self.pipe
@@ -112,17 +106,30 @@ class RealSense():
         return color_image, depth_image
 
     def get_pcd(self, image, depth):
+        mask = np.zeros_like(depth).astype(np.bool_)
         depth[depth < 0.2] = 0.2
         depth[depth > 1.] = 1.
+        mask[depth <= 0.2] = True
+        mask[depth >= 1] = True
         o3d_camera_intrinsic = o3d.camera.PinholeCameraIntrinsic(intr_width, intr_height, intr_fx, intr_fy,  intr_ppx, intr_ppy)
         depth_image_np = depth
         depth_image_o3d = o3d.geometry.Image(depth_image_np.astype(np.float32))
         pcd = o3d.geometry.PointCloud.create_from_depth_image(depth_image_o3d, o3d_camera_intrinsic)
         pcs = np.asarray(pcd.points)
-
+        pcs = pcs.reshape(image.shape[0], image.shape[1], 3)
+        pcs[mask] = np.nan
+        pcs = pcs.reshape(-1, 3)
         cols = image.reshape(-1, 3)
         pcd.colors = o3d.utility.Vector3dVector(cols / 256.)
         return pcd
+
+    def get_cam_obs(self, ):
+        image, depth = self.capture(once=True)
+        pcd = self.get_pcd(image, depth / 1000.)
+        points = np.asarray(pcd.points)
+        points = points.reshape(image.shape[0], image.shape[1], 3)
+        return image, points
+        
 
 if __name__ == "__main__":
     rs = RealSense()

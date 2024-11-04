@@ -26,8 +26,8 @@ class RemoteCameraClient(Client):
             local_lock_file_path,
             local_data_file_path,
         )
-        # self.camera = RealSense()
-        self.camera = Ensenso()
+        self.camera = RealSense()
+        # self.camera = Ensenso()
     
     # def get_cam_obs(self,):
     #     image, depth = self.camera.capture(once=True)
@@ -67,4 +67,8 @@ class RemoteCameraClient(Client):
         self.send(data)
         
     def handle_data(self, data):
-        return self.get_cam_obs()
+        type = data.split(":")[1]
+        if type == "extrinsic":
+            self.get_extrinsic()
+        else:
+            self.get_cam_obs()

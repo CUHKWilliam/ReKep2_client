@@ -4,9 +4,11 @@ import struct
 import time
 from scipy.spatial.transform import Rotation as R
 import cv2
+from leap_hand import LeapNode
+from scipy.spatial.transform import Rotation as R
 
-
-DEBUG = True
+DEBUG = False
+DEBUG2 = False
 
 class robot_controller:
     def __init__(self):
@@ -32,6 +34,16 @@ class robot_controller:
         ## TODO:
         # self.gripper_move()
         self.gripper_state = "open"
+        if not DEBUG:
+            self.gripper = LeapNode()
+        
+        ## TODO: set init pos
+        if not DEBUG:
+            robot_pos, robot_ori, _, _ = self.get_current_pose()
+            robot_ori = R.from_matrix(robot_ori).as_euler("ZYX")
+            robot_ori[0] = -np.pi / 2.
+            self.move_to_point([robot_pos[0], robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]])
+        
         
     def receive(self):
         self.s_in = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -70,21 +82,33 @@ class robot_controller:
         return robot_pos, robot_ori, robot_vel, contact_force
     
     ## TODO: for gripper
+    # def gripper_move(self):
+    #     if DEBUG:
+    #         return
+    #     one = np.array(1)
+    #     zero = np.array(0)
+    #     self.s_out = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    #     self.s_out.sendto(one.astype("d").tobytes(), (self.UDP_IP_OUT, self.gripper_port))
+    #     time.sleep(0.5)
+    #     self.s_out.sendto(zero.astype("d").tobytes(), (self.UDP_IP_OUT, self.gripper_port))
+    #     time.sleep(0.5)
+
+    ## TODO: for leap hand
     def gripper_move(self):
         if DEBUG:
             return
-        one = np.array(1)
-        zero = np.array(0)
-        self.s_out = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.s_out.sendto(one.astype("d").tobytes(), (self.UDP_IP_OUT, self.gripper_port))
-        time.sleep(0.5)
-        self.s_out.sendto(zero.astype("d").tobytes(), (self.UDP_IP_OUT, self.gripper_port))
-        time.sleep(0.5)
-
+        if self.gripper_state == "open":
+            self.gripper.close_gripper()
+            self.gripper_state = "close"
+        else:
+            self.gripper.open_gripper()
+            self.gripper_state = "open"
 
     def move_to_point(self, waypoint, compliant=False, wait=10):
         if DEBUG:
             return
+        if DEBUG2:
+            wait = 0.2
         if compliant:
             Mass = np.array([1,1,1])   # to determine
             Inertia = 1*np.array([2, 2, 0.1])   # to determine
@@ -240,13 +264,17 @@ class robot_controller:
             self.move_to_point([robot_pos[0], robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]])
 
 
-# if __name__ == "__main__": 
-#     rc = robot_controller()
-#     robot_pos, robot_ori, robot_vel, contact_force = rc.get_current_pose()
-#     print("pos:", robot_pos)
-#     print("ori:", robot_ori)
-    # rc.manual_control()
-    # import ipdb;ipdb.set_trace()
+if __name__ == "__main__": 
+    rc = robot_controller()
+    robot_pos, robot_ori, robot_vel, contact_force = rc.get_current_pose()
+    print("pos:", robot_pos)
+    print("ori:", robot_ori)
+    robot_ori = R.from_matrix(robot_ori).as_euler("ZYX")
+    rc.move_to_point([robot_pos[0]-0.1, robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]])
+    import ipdb;ipdb.set_trace()
+    rc.move_to_point()
+    rc.manual_control()
+    
 
     # poses = [
     #     np.array([0.49662015, 0.05465096, 0.13408024]),
@@ -353,7 +381,6 @@ import pickle
 import paramiko
 from scp import SCPClient
 from communication import Client
-DEBUG = True
 
 class RemoteRobotClient(Client):
     def __init__(self,
@@ -376,8 +403,8 @@ class RemoteRobotClient(Client):
         )
         self.robot_controller = robot_controller()
         ## TODO:
-        self.APPROACH0 =  np.array([1, 0, 0]).astype(np.float32)
-        self.BINORMAL0 = np.array([0, 1, 0]).astype(np.float32)
+        self.APPROACH0 =  np.array([0, 0, 1]).astype(np.float32)
+        self.BINORMAL0 = np.array([-1, 0, 0]).astype(np.float32)
     
     def get_init_approach(self,):
         return self.APPROACH0
@@ -423,6 +450,7 @@ class RemoteRobotClient(Client):
         if DEBUG:
             return np.array([0,0,0,0,0,0])
         robot_pos, robot_ori, _, _ = self.robot_controller.get_current_pose()
+        robot_ori = R.from_matrix(robot_ori).as_euler("ZYX")
         robot_pose = np.concatenate([robot_pos, robot_ori], axis=0)
         return robot_pose
         

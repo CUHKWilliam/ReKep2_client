@@ -1,4 +1,4 @@
-from robot_controller import robot_controller
+from remote.robot_controll_client import robot_controller
 from realsense import RealSense
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -11,22 +11,14 @@ rs = RealSense()
 rc.gripper_move()
 import ipdb;ipdb.set_trace()
 
-
-def get_grasp_in_cam(color, depth):
-    pcd = rs.get_pcd(color, depth)
-    points = np.asarray(pcd.points)
-    colors = np.asarray(pcd.colors)
-
-    mask = np.linalg.norm(color.astype(np.float32) - np.array([91., 20., 6.]), axis=-1) < 30
-    color2 = color.copy()
-    color2[mask] = np.array([255, 255, 255]).astype(np.uint8)
-    cv2.imwrite("debug.png",color2[:, :, ::-1])
-    # import ipdb;ipdb.set_trace()
-
-    mask = np.linalg.norm(colors.astype(np.float32) * 255 - np.array([91., 20., 6.]), axis=-1) < 30
-    points = points[mask]
-    pos_in_cam = points.mean(0)
-    return pos_in_cam    
+def get_mask_by_color(rgb):
+    rgb = rgb.astype(np.float32)
+    rgb = rgb / 255.
+    rgb = rgb / np.linalg.norm(rgb, axis=-1)[:, :, None]
+    red_vec = np.array([0., 0., 1.])
+    dot = (rgb * red_vec).sum(-1)
+    mask = dot > 0.8
+    return mask
 
 
 
@@ -47,21 +39,22 @@ for robot_pos in robot_poses:
     _, robot_ori, robot_vel, contact_force = rc.get_current_pose()
     robot_ori = R.from_matrix(robot_ori).as_euler("ZYX")
     rc.move_to_point([robot_pos[0], robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]])
-    color_image, depth_image = rs.capture(once=True)
-    # try:
-    cam_pos = get_grasp_in_cam(color_image, depth_image / 1000.)
-    # except:
-    #     print("error")
-    #     continue
+    rgb, pcs = rs.get_cam_obs()
+    cv2.imwrite('debug.png', rgb[:, :, ::-1])
+    red_mask = get_mask_by_color(rgb)
+    cv2.imwrite("debug2.png", (red_mask).astype(np.uint8) * 255)
+    pcs = pcs[red_mask]
+    pcs = pcs[np.logical_not(np.isnan(pcs).any(1))]
+    cam_pos = pcs.mean(0)
     cam_poses.append(cam_pos)
 
 
-
+import ipdb;ipdb.set_trace()
 trans_mat = cv2.estimateAffine3D(np.asarray([
         cam_poses
     ]), 
     np.asarray([
        robot_poses
-    ]), force_rotation=True)[0]
+    ]))[1]
 
 print(trans_mat)

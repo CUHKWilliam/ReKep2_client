@@ -30,9 +30,10 @@ class Ensenso():
         self.verbose = False    
         self.open_camera()
         self.update_camera_params()
-        self.extrinsic = np.array([[ 0.37943252,  0.29933713, -0.87545888,  0.46888271],
-       [-0.29118286,  0.93677002,  0.19409912, -0.08058141],
-       [ 0.87820471,  0.1812711 ,  0.44260285,  0.28193391]])
+        self.extrinsic = np.array([[-0.65682067,  0.72757012,  0.25493531,  0.42387837],
+            [ 0.81165412,  0.63924578,  0.16363196,  0.1920506 ],
+            [ 0.05099193,  0.32403044, -1.02070389, -0.54823992]])
+
     
     def update_camera_params(self):
         # param = json.dumps(json.load(open("data_collection/fast_scan2.json", "r")))
