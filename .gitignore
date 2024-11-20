@@ -8,4 +8,10 @@
 *.jpg
 *.ply
 *.pcd
-
+co-tracker/
+*.STL
+*.stl
+*.obj
+*.OBJ
+*.mtl
+*.MTL

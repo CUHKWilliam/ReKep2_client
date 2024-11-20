@@ -5,10 +5,11 @@ import time
 from scipy.spatial.transform import Rotation as R
 import cv2
 from leap_hand import LeapNode
+from gripper import Gripper
 from scipy.spatial.transform import Rotation as R
 
 DEBUG = False
-DEBUG2 = False
+DEBUG2 = True
 
 class robot_controller:
     def __init__(self):
@@ -31,18 +32,17 @@ class robot_controller:
 
         self.robot_pose, self.robot_vel, self.TCP_wrench = None, None, None
 
-        ## TODO:
-        # self.gripper_move()
         self.gripper_state = "open"
         if not DEBUG:
-            self.gripper = LeapNode()
+            # self.gripper = LeapNode()
+            self.gripper = Gripper(self.UDP_IP_IN, self.UDP_IP_OUT, self.UDP_PORT_IN, self.UDP_PORT_OUT, self.gripper_port)
         
         ## TODO: set init pos
         if not DEBUG:
             robot_pos, robot_ori, _, _ = self.get_current_pose()
             robot_ori = R.from_matrix(robot_ori).as_euler("ZYX")
             robot_ori[0] = -np.pi / 2.
-            self.move_to_point([robot_pos[0], robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]])
+            # self.move_to_point([robot_pos[0], robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]])
         
         
     def receive(self):
@@ -81,17 +81,7 @@ class robot_controller:
         contact_force = self.TCP_wrench[0:6]
         return robot_pos, robot_ori, robot_vel, contact_force
     
-    ## TODO: for gripper
-    # def gripper_move(self):
-    #     if DEBUG:
-    #         return
-    #     one = np.array(1)
-    #     zero = np.array(0)
-    #     self.s_out = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #     self.s_out.sendto(one.astype("d").tobytes(), (self.UDP_IP_OUT, self.gripper_port))
-    #     time.sleep(0.5)
-    #     self.s_out.sendto(zero.astype("d").tobytes(), (self.UDP_IP_OUT, self.gripper_port))
-    #     time.sleep(0.5)
+
 
     ## TODO: for leap hand
     def gripper_move(self):
@@ -104,7 +94,7 @@ class robot_controller:
             self.gripper.open_gripper()
             self.gripper_state = "open"
 
-    def move_to_point(self, waypoint, compliant=False, wait=10):
+    def move_to_point(self, waypoint, compliant=False, wait=10, first=True):
         if DEBUG:
             return
         if DEBUG2:
@@ -121,7 +111,10 @@ class robot_controller:
             Mass = np.array([2,2,2])   # to determine
             Inertia = 1*np.array([2, 2, 2])   # to determine
             Kp = np.array([600,600,600,200,200,200])
+            # Kp = np.array([0,0,0,0,0,0])
             Kd = np.array([300,300,300,250,250,250])
+            # Kd = np.array([70,70,70,20,20,10])
+            
             TCP_d_pos = waypoint[:3]
             TCP_d_euler = waypoint[3:]
             TCP_d_vel = np.zeros(6)
@@ -138,6 +131,14 @@ class robot_controller:
             UDP_cmd = np.hstack([TCP_d_pos, TCP_d_euler, TCP_d_vel, Kp, Kd, Mass, Inertia])
             self.send(UDP_cmd)
             # print(dis_ori)
+        
+        robot_pos, robot_ori, robot_vel, contact_force = self.get_current_pose()
+        print("contact force:", contact_force)
+        if np.abs(np.array(contact_force)).max() > 10 and first:
+            print("too much force")
+            robot_ori = R.from_matrix(robot_ori).as_euler("ZYX")
+            self.move_to_point([robot_pos[0], robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]], first=False)
+
 
     def move_to_point_step(self, waypoint, compliant=False, wait=10):
         if compliant:
@@ -219,8 +220,9 @@ class robot_controller:
                 print("pos:", robot_pos2)
                 print("ori:", robot_ori2)
 
-
             self.move_to_point([robot_pos[0], robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]])
+        robot_pos2, robot_ori2, robot_vel2, contact_force2 = self.get_current_pose()
+        return robot_pos2, robot_ori2
 
     def manual_control_collect(self,):
         while True:
@@ -404,7 +406,7 @@ class RemoteRobotClient(Client):
         self.robot_controller = robot_controller()
         ## TODO:
         self.APPROACH0 =  np.array([0, 0, 1]).astype(np.float32)
-        self.BINORMAL0 = np.array([-1, 0, 0]).astype(np.float32)
+        self.BINORMAL0 = np.array([0, -1, 0]).astype(np.float32)
     
     def get_init_approach(self,):
         return self.APPROACH0
