@@ -136,8 +136,8 @@ class robot_controller:
         print("contact force:", contact_force)
         if np.abs(np.array(contact_force)).max() > 10 and first:
             print("too much force")
-            robot_ori = R.from_matrix(robot_ori).as_euler("ZYX")
-            self.move_to_point([robot_pos[0], robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]], first=False)
+            # robot_ori = R.from_matrix(robot_ori).as_euler("ZYX")
+            # self.move_to_point([robot_pos[0], robot_pos[1], robot_pos[2],  robot_ori[0], robot_ori[1], robot_ori[2]], first=False)
 
 
     def move_to_point_step(self, waypoint, compliant=False, wait=10):
@@ -388,6 +388,7 @@ class RemoteRobotClient(Client):
     def __init__(self,
                  server_ip,
                  server_name,
+                 server_port,
                  server_pw,
                  lock_file_path,
                  data_file_path,
@@ -397,6 +398,7 @@ class RemoteRobotClient(Client):
         super().__init__(
             server_ip,
             server_name,
+            server_port,
             server_pw,
             lock_file_path,
             data_file_path,
@@ -405,7 +407,7 @@ class RemoteRobotClient(Client):
         )
         self.robot_controller = robot_controller()
         ## TODO:
-        self.APPROACH0 =  np.array([0, 0, 1]).astype(np.float32)
+        self.APPROACH0 =  np.array([0, 0, -1]).astype(np.float32)
         self.BINORMAL0 = np.array([0, -1, 0]).astype(np.float32)
     
     def get_init_approach(self,):

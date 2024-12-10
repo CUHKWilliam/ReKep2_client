@@ -13,9 +13,9 @@ intr_fy = 385.8968200683594
 intr_ppx = 325.1910400390625
 intr_ppy = 237.3795928955078
 
-extric_mat = np.array([[ 0.75269223,  0.0662071 , -0.15891368,  0.68731665],
-       [ 0.06249172, -0.43039059,  0.91493665, -0.38448571],
-       [ 0.0031097 , -0.47081213, -0.58728788,  0.27960673]])
+extric_mat = np.array([[ 0.6379788 ,  0.01673559, -0.05272917,  0.62291607],
+       [ 0.02641118, -0.37058957,  0.84496718, -0.34168438],
+       [-0.00329491, -0.53876939, -0.52106638,  0.23283998]])
 depth_scale = 1000
 depth_max = 1.
 
@@ -42,7 +42,6 @@ class RealSense():
         # profile = config.get_stream(rs.stream.depth)  
         # intr = profile.as_video_stream_profile().get_intrinsics()
 
-
         self.cfg = cfg
         self.pipe = pipe
         self.serial = serial
@@ -53,11 +52,11 @@ class RealSense():
         self.depth_scale = depth_scale
         self.depth_max = depth_max
         self.width, self.height = intr_width, intr_height
+        self.config = pipe.start(cfg)
 
     def get_data(self,):
         pipe = self.pipe
         cfg = self.cfg
-        pipe.start(cfg)
         flag_stop = False
         while True:
             color_image, depth_image = self.capture()
@@ -70,19 +69,23 @@ class RealSense():
                 cv2.destroyAllWindows()
                 flag_stop = True
                 break
-        pipe.stop()
         return color_image, depth_image, flag_stop
 
+    def fast_capture(self,):
+        pipe = self.pipe
+        frameset = pipe.wait_for_frames()
+        frameset = self.align.process(frameset)
+        frameset.keep()
+        color_frame = frameset.get_color_frame()
+        color = np.asanyarray(color_frame.get_data())
+        return color
+        
     def capture(self, once=False):
         # Skip 5 first frames to give the Auto-Exposure time to adjust
         pipe = self.pipe
         serial = self.serial
         cfg = self.cfg
         
-        if once:
-            config = pipe.start(cfg)
-
-        time.sleep(0.5)
         try:
             pipe.wait_for_frames()
         except:
@@ -91,25 +94,22 @@ class RealSense():
                 dev.hardware_reset()
         # Store next frameset for later processing:
         for _ in range(5):
-            frameset = pipe.wait_for_frames()
+            try:
+                frameset = pipe.wait_for_frames()
+            except:
+                devices = self.ctx.query_devices()
+                for dev in devices:
+                    dev.hardware_reset()
             # pipe.wait_for_frames()
             frameset = self.align.process(frameset)
             color_frame = frameset.get_color_frame()
             depth_frame = frameset.get_depth_frame()
             if not once:
                 break
-            time.sleep(0.5)
-        # Cleanup:
-        if once:
-            pipe.stop()
-        ## TODO: for debug
-        # self.get_pcd(depth_frame, color_frame)
-        # import ipdb;ipdb.set_trace()
+            time.sleep(0.3)
         
         color = np.asanyarray(color_frame.get_data())
-
         color_image = np.asanyarray(color)
-        cv2.imwrite("debug.png", color_image)
         depth_image = np.asanyarray(depth_frame.get_data())
         return color_image, depth_image
 
@@ -133,11 +133,21 @@ class RealSense():
         pcd.colors = o3d.utility.Vector3dVector(cols / 256.)
         return pcd
 
+    def get_cam_rgb(self,):
+        image = self.fast_capture()
+        return image
+    
     def get_cam_obs(self, return_depth=False):
         image, depth = self.capture(once=True)
         pcd = self.get_pcd(image, depth / depth_scale)
         points = np.asarray(pcd.points)
-        points = points.reshape(image.shape[0], image.shape[1], 3)
+        height, width = image.shape[0], image.shape[1]
+        points = points.reshape(height, width, 3)
+        points = np.concatenate([points, np.ones((height, width, 1))], axis=-1)
+        points = points.reshape(-1, 4)
+        points = points @ self.extrinsic.T
+        points = points.reshape(height, width, 3)
+        
         if not return_depth:
             return image, points
         else:

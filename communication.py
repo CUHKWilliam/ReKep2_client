@@ -10,6 +10,7 @@ class Client:
     def __init__(self,
             server_ip,
             server_name,
+            server_port,
             server_pw,
             lock_file_path,
             data_file_path,           
@@ -18,6 +19,7 @@ class Client:
         ):
             self.server_ip = server_ip
             self.server_name = server_name
+            self.server_port = server_port
             self.server_pw = server_pw
             self.lock_file_path = lock_file_path
             self.data_file_path = data_file_path
@@ -28,7 +30,7 @@ class Client:
             client = paramiko.SSHClient()
             client.load_system_host_keys()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            client.connect(self.server_ip, 7347, self.server_name, self.server_pw)
+            client.connect(self.server_ip, self.server_port, self.server_name, self.server_pw)
             self.ssh = client
             self.scp = SCPClient(self.ssh.get_transport())
             
@@ -36,7 +38,7 @@ class Client:
         scp = self.scp
         while True:
             scp.get(self.lock_file_path, self.local_lock_file_path)
-            time.sleep(0.1)
+            time.sleep(0.05)
             with open(self.local_lock_file_path, 'r') as f:
                 content = f.read().strip()
             if content == "1":
@@ -72,7 +74,7 @@ class Client:
     def check_read(self,):
         while True:
             self.scp.get(self.lock_file_path, self.local_lock_file_path)
-            time.sleep(0.1)
+            time.sleep(0.05)
             with open(self.local_lock_file_path, "r") as f:
                 lock = f.read().strip()
             if lock == "0":

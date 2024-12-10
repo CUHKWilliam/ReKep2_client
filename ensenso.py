@@ -217,13 +217,21 @@ class Ensenso():
         color_numpy, depth_numpy = self.point_to_rgbd(pcd_t)
         return color_numpy, depth_numpy
     
-    def get_cam_obs(self,):
+    def get_cam_obs(self, return_depth=False):
         for _ in range(5):
             data = self.get_colored_pointcloud()
         rgb = self.get_rgb_image()[:, :, :3]
-        # rgb = data[0][:, :, :3]
-        pcs = data[1]
-        return rgb, pcs
+        points = data[1]
+        height, width = rgb.shape[0], rgb.shape[1]
+        points = points.reshape(height, width, 3)
+        points = np.concatenate([points, np.ones((height, width, 1))], axis=-1)
+        points = points.reshape(-1, 4)
+        points = points @ self.extrinsic.T
+        points = points.reshape(height, width, 3)
+        if return_depth:
+            return rgb, None, points
+        else:
+            return rgb, points
 
     def close(self,):
         self.close_camera()
@@ -237,6 +245,8 @@ def get_colored_pointcloud(pipeline, results):
 
 if __name__ == "__main__":
     ensenso = Ensenso()
+    rgb, points = ensenso.get_cam_obs()
+    import ipdb;ipdb.set_trace()
     for _ in range(5):
         init_time = time.time()
         pcd = ensenso.get_colored_pointcloud()

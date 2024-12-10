@@ -15,7 +15,7 @@ def get_mask_by_color(rgb):
     rgb = rgb.astype(np.float32)
     rgb = rgb / 255.
     rgb = rgb / np.linalg.norm(rgb, axis=-1)[:, :, None]
-    red_vec = np.array([0., 0.5, 1.])
+    red_vec = np.array([1., 0., 0.])
     red_vec = red_vec / np.linalg.norm(red_vec)
     dot = (rgb * red_vec).sum(-1)
     mask = dot > 0.9
@@ -67,7 +67,7 @@ cam_poses = []
 
 ## TODO: mode 2:
 robot_poses = []
-for _ in range(10):
+for _ in range(20):
     robot_pos, robot_ori = rc.manual_control()
     robot_poses.append(robot_pos)
     robot_ori = R.from_matrix(robot_ori).as_euler("ZYX")
